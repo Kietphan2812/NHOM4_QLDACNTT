@@ -1,11 +1,10 @@
 /* ==========================================================================
    GRAB RIDE PLATFORM - SQL DATABASE MANAGEMENT HUB (11 TABLES)
-   Maps to SQL Server Database: QLGRAB
+   Direct Live Sync with SQL Server Database: QLGRAB
    ========================================================================== */
 
 let activeSqlTable = 'BangGiaCuoc';
 
-// Synchronized initial data matching schema_QLGRAB.sql in SQL Server
 let qlgrabDatabaseState = {
   BangGiaCuoc: [
     { ma_gia_cuoc: 1, loai_xe: 'XE_MAY', gia_mo_cua: 14000, gia_moi_km_tiep_theo: 5500, he_so_gio_cao_diem: 1.0, ngay_cap_nhat: '2026-08-25' },
@@ -13,8 +12,7 @@ let qlgrabDatabaseState = {
     { ma_gia_cuoc: 3, loai_xe: 'OTO_7_CHO', gia_mo_cua: 30000, gia_moi_km_tiep_theo: 13500, he_so_gio_cao_diem: 1.0, ngay_cap_nhat: '2026-08-25' }
   ],
   CuocXe: [
-    { ma_cuoc_xe: 1, ma_khach_hang: 1, ma_tai_xe: 2, dia_chi_don: 'Đại Học Bách Khoa (Q.10)', vi_do_don: 10.7721, kinh_do_don: 106.6578, dia_chi_tra: 'Sân Bay Tân Sơn Nhất', vi_do_tra: 10.8185, kinh_do_tra: 106.6588, quang_duong_km: 7.4, thoi_gian_du_kien_phut: 18, gia_cuoc_goc: 80700, so_tien_giam: 0, tong_tien_thanhtoan: 80700, trang_thai: 'HOAN_THANH' },
-    { ma_cuoc_xe: 2, ma_khach_hang: 1, ma_tai_xe: 3, dia_chi_don: 'Vincom Đồng Khởi (Q.1)', vi_do_don: 10.7780, kinh_do_don: 106.7000, dia_chi_tra: 'Thảo Điền Pearl (Q.2)', vi_do_tra: 10.8030, kinh_do_tra: 106.7320, quang_duong_km: 5.4, thoi_gian_du_kien_phut: 14, gia_cuoc_goc: 88000, so_tien_giam: 0, tong_tien_thanhtoan: 88000, trang_thai: 'HOAN_THANH' }
+    { ma_cuoc_xe: 1, ma_khach_hang: 1, ma_tai_xe: 2, dia_chi_don: 'Đại Học Bách Khoa (Q.10)', vi_do_don: 10.7721, kinh_do_don: 106.6578, dia_chi_tra: 'Sân Bay Tân Sơn Nhất', vi_do_tra: 10.8185, kinh_do_tra: 106.6588, quang_duong_km: 7.4, thoi_gian_du_kien_phut: 18, gia_cuoc_goc: 80700, so_tien_giam: 0, tong_tien_thanhtoan: 80700, trang_thai: 'HOAN_THANH' }
   ],
   DanhGia: [
     { ma_danh_gia: 1, ma_cuoc_xe: 1, ma_nguoi_danh_gia: 1, ma_nguoi_nhan_danh_gia: 2, so_sao: 5, noi_dung_binh_luan: 'Tài xế lái xe an toàn, phục vụ tốt!', ngay_danh_gia: '2026-08-25' }
@@ -51,17 +49,28 @@ let qlgrabDatabaseState = {
   ]
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadLiveSqlData();
   renderActiveSqlTable();
 });
 
-function switchSqlTable(tableName) {
+async function loadLiveSqlData() {
+  if (window.SqlConnector) {
+    const liveData = await window.SqlConnector.getTableData(activeSqlTable);
+    if (liveData && liveData.length > 0) {
+      qlgrabDatabaseState[activeSqlTable] = liveData;
+    }
+  }
+}
+
+async function switchSqlTable(tableName) {
   activeSqlTable = tableName;
   document.querySelectorAll('.sql-table-tab').forEach(tab => tab.classList.remove('active'));
   
   const currentTabBtn = Array.from(document.querySelectorAll('.sql-table-tab')).find(b => b.innerText.includes(tableName));
   if (currentTabBtn) currentTabBtn.classList.add('active');
 
+  await loadLiveSqlData();
   renderActiveSqlTable();
 }
 
@@ -127,11 +136,7 @@ function openAddDataModal() {
   if (title) title.innerText = `➕ Thêm Bản Ghi Mới Vào dbo.${activeSqlTable}`;
 
   const dataList = qlgrabDatabaseState[activeSqlTable] || [];
-  let sampleRecord = dataList[0];
-
-  if (!sampleRecord) {
-    sampleRecord = { id: 1, ngay_tao: '2026-08-25' };
-  }
+  let sampleRecord = dataList[0] || { ma_id: 1, ten: '' };
 
   const fieldsHtml = Object.keys(sampleRecord).map(key => `
     <div>
@@ -152,7 +157,7 @@ function closeAddDataModal() {
   if (modal) modal.style.display = 'none';
 }
 
-function saveRecordToSql(event) {
+async function saveRecordToSql(event) {
   event.preventDefault();
   const form = event.target;
   const formData = new FormData(form);
@@ -169,7 +174,16 @@ function saveRecordToSql(event) {
 
   closeAddDataModal();
   renderActiveSqlTable();
-  showToast(`Đã thêm bản ghi mới vào dbo.${activeSqlTable}!`, 'success', 'SQL Data Saved');
+
+  // DIRECT REAL-TIME SAVE TO POWERSHELL SERVER & SQL SERVER QLGRAB
+  if (window.SqlConnector) {
+    const saved = await window.SqlConnector.insertRecord(activeSqlTable, newObj);
+    if (saved) {
+      showToast(`ĐÃ LƯU TRỰC TIẾP VÀO SQL SERVER DATABASE QLGRAB!`, 'success', 'SQL Server Live Sync');
+    } else {
+      showToast(`Đã thêm bản ghi trên Web (Hãy bật server.ps1 để đồng bộ tự động)`, 'info');
+    }
+  }
 }
 
 function deleteRecordIndex(idx) {
@@ -202,5 +216,5 @@ function exportInsertStatements() {
   a.download = `INSERT_${activeSqlTable}_QLGRAB.sql`;
   a.click();
 
-  showToast(`Đã xuất file script SQL cho dbo.${activeSqlTable}. Hãy chạy nút 'sync_to_sqlserver.bat' hoặc bấm F5 trong SSMS!`, 'success', 'Export T-SQL');
+  showToast(`Đã xuất file script SQL cho dbo.${activeSqlTable}`, 'success');
 }
