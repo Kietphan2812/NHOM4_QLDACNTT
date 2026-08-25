@@ -1,0 +1,414 @@
+/* ==========================================================================
+   GRAB RIDE PLATFORM - MASTER DESIGN SYSTEM
+   Signature Grab Emerald Green (#00b14f), SVG Icons & Autocomplete Search
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  /* Grab Signature Brand Colors */
+  --grab-green: #00b14f;
+  --grab-green-hover: #008e3f;
+  --grab-green-glow: rgba(0, 177, 79, 0.3);
+  
+  --bg-dark: #0b0f19;
+  --bg-card: rgba(18, 24, 38, 0.85);
+  --bg-card-hover: rgba(26, 36, 56, 0.9);
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-glow: rgba(0, 177, 79, 0.4);
+
+  /* Accent Colors */
+  --accent-cyan: #06b6d4;
+  --accent-amber: #ffb400;
+  --accent-red: #ef4444;
+  --accent-purple: #8b5cf6;
+
+  /* Typography & Shadows */
+  --font-main: 'Plus Jakarta Sans', -apple-system, sans-serif;
+  --font-code: 'JetBrains Mono', monospace;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-full: 9999px;
+
+  --shadow-card: 0 10px 30px -5px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-main);
+  background-color: var(--bg-dark);
+  background-image: 
+    radial-gradient(circle at 10% 10%, rgba(0, 177, 79, 0.1) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.06) 0%, transparent 40%);
+  background-attachment: fixed;
+  color: #f8fafc;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #070a12; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--grab-green); }
+
+/* Grab Top Navbar */
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: rgba(11, 15, 25, 0.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border-color);
+  padding: 0.85rem 2.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+}
+
+.nav-logo-box {
+  width: 44px;
+  height: 44px;
+  background: var(--grab-green);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 15px var(--grab-green-glow);
+}
+
+.nav-brand-title {
+  font-weight: 800;
+  font-size: 1.35rem;
+  letter-spacing: -0.5px;
+  color: #fff;
+}
+
+.nav-brand-title span {
+  color: var(--grab-green);
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  list-style: none;
+}
+
+.nav-item a {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.1rem;
+  color: #94a3b8;
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+}
+
+.nav-item a:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.nav-item a.active {
+  color: #fff;
+  background: rgba(0, 177, 79, 0.15);
+  border: 1px solid var(--border-glow);
+  box-shadow: 0 0 12px var(--grab-green-glow);
+}
+
+.nav-badge {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-full);
+  background: rgba(0, 177, 79, 0.2);
+  color: var(--grab-green);
+  border: 1px solid rgba(0, 177, 79, 0.4);
+  font-weight: 700;
+}
+
+/* Real-world Nominatim Autocomplete Suggestions Box */
+.autocomplete-container {
+  position: relative;
+  width: 100%;
+}
+
+.autocomplete-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 2000;
+  background: #0f172a;
+  border: 1px solid var(--grab-green);
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+  max-height: 240px;
+  overflow-y: auto;
+  margin-top: 4px;
+  display: none;
+}
+
+.suggestion-item {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.85rem;
+  color: #cbd5e1;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  transition: background 0.2s ease;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.suggestion-item:hover {
+  background: rgba(0, 177, 79, 0.2);
+  color: #fff;
+}
+
+/* Grab Service Icon Badges */
+.grab-service-badge {
+  width: 72px;
+  height: 72px;
+  background: var(--grab-green);
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+  box-shadow: 0 8px 20px rgba(0, 177, 79, 0.3);
+  transition: transform 0.25s ease;
+}
+
+.grab-service-badge:hover {
+  transform: scale(1.08);
+}
+
+.grab-icon-sm {
+  width: 32px;
+  height: 32px;
+  background: var(--grab-green);
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Page Layout */
+.container {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* Grab Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  text-decoration: none;
+}
+
+.btn-grab {
+  background: linear-gradient(135deg, var(--grab-green), #008e3f);
+  color: #fff;
+  box-shadow: 0 4px 15px var(--grab-green-glow);
+}
+.btn-grab:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px var(--grab-green-glow);
+  filter: brightness(1.1);
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border: 1px solid var(--border-color);
+}
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #fff;
+}
+
+.btn-sm {
+  padding: 0.4rem 0.85rem;
+  font-size: 0.8rem;
+  border-radius: var(--radius-sm);
+}
+
+/* Card Styling */
+.card {
+  background: var(--bg-card);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-card);
+  transition: transform 0.25s ease, border-color 0.25s ease;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.card-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Grids */
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem; }
+
+@media (max-width: 1024px) {
+  .grid-4, .grid-3 { grid-template-columns: repeat(2, 1fr); }
+  .grid-2 { grid-template-columns: 1fr; }
+}
+@media (max-width: 768px) {
+  .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
+  .navbar { flex-direction: column; gap: 1rem; padding: 1rem; }
+}
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: var(--radius-full);
+}
+.badge-green { background: rgba(0, 177, 79, 0.15); color: #00b14f; border: 1px solid rgba(0, 177, 79, 0.3); }
+.badge-blue { background: rgba(6, 182, 212, 0.15); color: #06b6d4; border: 1px solid rgba(6, 182, 212, 0.3); }
+.badge-amber { background: rgba(255, 180, 0, 0.15); color: #ffb400; border: 1px solid rgba(255, 180, 0, 0.3); }
+.badge-red { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+
+/* Table Styling */
+.custom-table-wrapper {
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+.custom-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.9rem;
+}
+.custom-table th {
+  background: rgba(15, 23, 42, 0.9);
+  color: #94a3b8;
+  font-weight: 700;
+  padding: 0.85rem 1.2rem;
+  border-bottom: 1px solid var(--border-color);
+}
+.custom-table td {
+  padding: 0.9rem 1.2rem;
+  border-bottom: 1px solid var(--border-color);
+  color: #f8fafc;
+}
+.custom-table tr:hover td {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* Map Styling */
+.map-container {
+  width: 100%;
+  height: 440px;
+  background: #090d16;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  position: relative;
+  overflow: hidden;
+}
+.map-svg { width: 100%; height: 100%; }
+
+.pulse-circle { animation: pulseRing 2s infinite; }
+@keyframes pulseRing {
+  0% { r: 12; opacity: 0.8; }
+  100% { r: 35; opacity: 0; }
+}
+
+/* Toast Notifications */
+#toast-container {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.toast {
+  background: rgba(18, 24, 38, 0.95);
+  backdrop-filter: blur(12px);
+  border-left: 4px solid var(--grab-green);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+  color: #fff;
+  font-size: 0.9rem;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  animation: slideInRight 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  min-width: 320px;
+}
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* Footer */
+.footer {
+  margin-top: 4rem;
+  border-top: 1px solid var(--border-color);
+  padding: 2.5rem 0;
+  text-align: center;
+  color: #64748b;
+  font-size: 0.85rem;
+}

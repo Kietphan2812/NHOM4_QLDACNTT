@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jenkins CI/CD Pipeline & Slack Integration | Nhóm 4</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .pipeline-stage-card {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      text-align: center;
+      position: relative;
+    }
+    .pipeline-stage-card::after {
+      content: "➔";
+      position: absolute;
+      right: -1.2rem;
+      top: 40%;
+      color: var(--text-dim);
+      font-size: 1.2rem;
+    }
+    .grid-5 .pipeline-stage-card:last-child::after {
+      display: none;
+    }
+    .grid-5 {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 1.25rem;
+    }
+    @media (max-width: 1024px) {
+      .grid-5 { grid-template-columns: 1fr; }
+      .pipeline-stage-card::after { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <div id="app-header"></div>
+
+  <main class="container">
+    <div class="page-header">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <h1 class="page-title">⚙️ Jenkins CI/CD Pipeline & Slack Alert Integration</h1>
+          <p class="page-subtitle">Tự động hóa Build, Test, Dockerize & Deploy với Webhook thông báo lỗi tự động qua Slack</p>
+        </div>
+        <span class="badge badge-amber" style="font-size: 0.85rem; padding: 0.4rem 0.8rem;">Automated DevOps Pipeline</span>
+      </div>
+    </div>
+
+    <!-- Pipeline Controller Header -->
+    <div class="card" style="margin-bottom: 2rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <div style="font-weight: 800; color: #fff; font-size: 1.1rem; margin-bottom: 0.3rem;">
+            🚀 Jenkins Declarative Pipeline Controller
+          </div>
+          <p style="color: var(--text-muted); font-size: 0.85rem;">
+            Repository: <code style="color: var(--secondary);">nhom4/ride-hailing-backend</code> • Branch: <code style="color: var(--primary);">main</code>
+          </p>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 1.5rem;">
+          <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-muted); font-size: 0.85rem; cursor: pointer;">
+            <input type="checkbox" id="chk-fail" onchange="toggleSimulateFail(this)" style="accent-color: var(--accent-rose); transform: scale(1.2);">
+            <span style="color: var(--accent-rose); font-weight: 700;">🚨 Giả lập Lỗi Build (Docker Stage Fail)</span>
+          </label>
+
+          <button id="btn-trigger-build" class="btn btn-primary" onclick="triggerJenkinsBuild()">
+            ⚡ Trigger Manual Jenkins Build
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5 Jenkins Pipeline Stages Visualizer -->
+    <div class="grid-5" style="margin-bottom: 2rem;">
+      <div class="pipeline-stage-card">
+        <div style="font-size: 1.5rem; margin-bottom: 0.4rem;">🔍</div>
+        <div style="font-weight: 700; color: #fff; font-size: 0.9rem; margin-bottom: 0.4rem;">Stage 1</div>
+        <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">Checkout & ESLint</div>
+        <span id="stage-badge-1" class="badge badge-green">✅ Passed</span>
+      </div>
+
+      <div class="pipeline-stage-card">
+        <div style="font-size: 1.5rem; margin-bottom: 0.4rem;">🧪</div>
+        <div style="font-weight: 700; color: #fff; font-size: 0.9rem; margin-bottom: 0.4rem;">Stage 2</div>
+        <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">Unit & Integration Test</div>
+        <span id="stage-badge-2" class="badge badge-green">✅ Passed</span>
+      </div>
+
+      <div class="pipeline-stage-card">
+        <div style="font-size: 1.5rem; margin-bottom: 0.4rem;">🐳</div>
+        <div style="font-weight: 700; color: #fff; font-size: 0.9rem; margin-bottom: 0.4rem;">Stage 3</div>
+        <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">Docker Image Build</div>
+        <span id="stage-badge-3" class="badge badge-green">✅ Passed</span>
+      </div>
+
+      <div class="pipeline-stage-card">
+        <div style="font-size: 1.5rem; margin-bottom: 0.4rem;">📦</div>
+        <div style="font-weight: 700; color: #fff; font-size: 0.9rem; margin-bottom: 0.4rem;">Stage 4</div>
+        <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">Push to AWS ECR</div>
+        <span id="stage-badge-4" class="badge badge-green">✅ Passed</span>
+      </div>
+
+      <div class="pipeline-stage-card">
+        <div style="font-size: 1.5rem; margin-bottom: 0.4rem;">🚀</div>
+        <div style="font-weight: 700; color: #fff; font-size: 0.9rem; margin-bottom: 0.4rem;">Stage 5</div>
+        <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">AWS EKS Deploy</div>
+        <span id="stage-badge-5" class="badge badge-green">✅ Passed</span>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <!-- Left Column: Jenkins Console Output Logs -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">💻 Jenkins Build Console Logs Stream</div>
+          <span class="badge badge-purple">Live Log Output</span>
+        </div>
+        <pre id="jenkins-console-logs" class="code-block" style="height: 380px;">
+[INFO] Waiting for user build trigger...
+[INFO] Last build #141 completed with status: SUCCESS (0 errors)
+        </pre>
+      </div>
+
+      <!-- Right Column: Slack Automated Notifications Feed -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title" style="display: flex; align-items: center; gap: 0.5rem;">
+            <span>💬 Kênh Slack Alert:</span>
+            <span style="color: var(--secondary);">#build-alerts</span>
+          </div>
+          <span class="badge badge-red">Webhook Active</span>
+        </div>
+
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+          Tự động đẩy tin nhắn cảnh báo đỏ vào kênh Slack của đội kỹ thuật khi có sự cố Build thất bại hoặc Deploy lỗi.
+        </p>
+
+        <div id="slack-feed-messages" style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 330px; overflow-y: auto; padding-right: 0.5rem;">
+          <!-- Slack messages injected by js/devops.js -->
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="app-footer"></div>
+
+  <script src="js/common.js"></script>
+  <script src="js/devops.js"></script>
+</body>
+</html>

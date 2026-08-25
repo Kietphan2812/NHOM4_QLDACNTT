@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confluence Microservices Architecture & SQL Database QLGRAB | Nhóm 4</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .sql-table-tab {
+      padding: 0.5rem 0.9rem;
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .sql-table-tab.active {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: var(--primary);
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <div id="app-header"></div>
+
+  <main class="container">
+    <div class="page-header">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <h1 class="page-title">📘 Confluence: Kết Nối CSDL SQL <span style="color: var(--primary);">QLGRAB</span> & Microservices</h1>
+          <p class="page-subtitle">Hệ quản trị CSDL SQL Server <strong>QLGRAB</strong> (11 Bảng chuẩn 3NF) kết nối trực tiếp các module ứng dụng</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <span class="badge badge-green" style="font-size: 0.85rem; padding: 0.4rem 0.8rem;">🟢 SQL Server: Connected (QLGRAB)</span>
+          <a href="schema_QLGRAB.sql" download class="btn btn-secondary btn-sm">📥 Tải File schema_QLGRAB.sql</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- LIVE SQL QUERY EXECUTOR CONSOLE FOR QLGRAB -->
+    <div class="card" style="margin-bottom: 2rem; border-color: var(--primary);">
+      <div class="card-header">
+        <div class="card-title" style="color: var(--primary);">⚡ Trình Thực Thi Câu Lệnh SQL Query Tương Tác (Database: QLGRAB)</div>
+        <span class="badge badge-blue">T-SQL Query Console</span>
+      </div>
+
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.75rem;">
+        Nhập hoặc chọn câu lệnh T-SQL bên dưới để truy vấn thực tế dữ liệu từ CSDL <strong>QLGRAB</strong>:
+      </p>
+
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem;">
+        <button class="btn btn-secondary btn-sm" onclick="setQueryPreset('SELECT * FROM NguoiDung')">SELECT * FROM NguoiDung</button>
+        <button class="btn btn-secondary btn-sm" onclick="setQueryPreset('SELECT * FROM HoSoTaiXe')">SELECT * FROM HoSoTaiXe</button>
+        <button class="btn btn-secondary btn-sm" onclick="setQueryPreset('SELECT * FROM ViTaiXe')">SELECT * FROM ViTaiXe</button>
+        <button class="btn btn-secondary btn-sm" onclick="setQueryPreset('SELECT * FROM CuocXe')">SELECT * FROM CuocXe</button>
+        <button class="btn btn-secondary btn-sm" onclick="setQueryPreset('SELECT * FROM BangGiaCuoc')">SELECT * FROM BangGiaCuoc</button>
+        <button class="btn btn-secondary btn-sm" onclick="setQueryPreset('SELECT * FROM MaGiamGia')">SELECT * FROM MaGiamGia</button>
+        <button class="btn btn-secondary btn-sm" onclick="setQueryPreset('SELECT * FROM ThanhToan')">SELECT * FROM ThanhToan</button>
+      </div>
+
+      <div style="display: flex; gap: 0.75rem; margin-bottom: 1rem;">
+        <input type="text" id="sql-console-input" value="SELECT * FROM CuocXe" 
+          style="flex: 1; padding: 0.75rem 1rem; background: #090d16; border: 1px solid var(--border-color); border-radius: var(--radius-md); color: #fff; font-family: var(--font-code); font-size: 0.9rem;">
+        <button class="btn btn-primary" onclick="runConsoleSqlQuery()">▶ Execute Query</button>
+      </div>
+
+      <!-- SQL Query Result Container -->
+      <div id="sql-query-result-box" style="background: #090d16; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1rem; overflow-x: auto;">
+        <div style="font-size: 0.8rem; color: var(--primary); font-family: var(--font-code); margin-bottom: 0.5rem;">
+          [SQL Server 2022] Connected to database 'QLGRAB'. Executed successfully.
+        </div>
+        <div id="sql-result-table-wrapper">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+    </div>
+
+    <!-- SQL DATABASE SCHEMA ERD VIEWER FOR QLGRAB -->
+    <div class="card" style="margin-bottom: 2rem;">
+      <div class="card-header">
+        <div class="card-title">🗄️ Cấu Trúc 11 Bảng CSDL QLGRAB (3NF Standard Specs)</div>
+        <span class="badge badge-purple">QLGRAB Schema DDL</span>
+      </div>
+
+      <!-- SQL Table Selector Tabs -->
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.25rem;">
+        <button class="sql-table-tab active" onclick="showSqlTable('NguoiDung')">1. NguoiDung</button>
+        <button class="sql-table-tab" onclick="showSqlTable('ThongBao')">2. ThongBao</button>
+        <button class="sql-table-tab" onclick="showSqlTable('HoSoTaiXe')">3. HoSoTaiXe</button>
+        <button class="sql-table-tab" onclick="showSqlTable('ViTaiXe')">4. ViTaiXe</button>
+        <button class="sql-table-tab" onclick="showSqlTable('LichSuGiaoDichVi')">5. LichSuGiaoDichVi</button>
+        <button class="sql-table-tab" onclick="showSqlTable('BangGiaCuoc')">6. BangGiaCuoc</button>
+        <button class="sql-table-tab" onclick="showSqlTable('MaGiamGia')">7. MaGiamGia</button>
+        <button class="sql-table-tab" onclick="showSqlTable('CuocXe')">8. CuocXe</button>
+        <button class="sql-table-tab" onclick="showSqlTable('NhatKyDiChuyen')">9. NhatKyDiChuyen</button>
+        <button class="sql-table-tab" onclick="showSqlTable('ThanhToan')">10. ThanhToan</button>
+        <button class="sql-table-tab" onclick="showSqlTable('DanhGia')">11. DanhGia</button>
+      </div>
+
+      <!-- SQL Table Details Display -->
+      <div id="sql-table-detail-container">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+    <!-- Docker Containers Real-time Monitor -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">🐳 Docker Containers Status Monitor (`docker ps`)</div>
+        <span class="badge badge-green">Real-time Metrics</span>
+      </div>
+
+      <div class="custom-table-wrapper">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>Container ID / Name</th>
+              <th>Image / Service</th>
+              <th>Port Mapping</th>
+              <th>CPU Usage</th>
+              <th>Memory Usage</th>
+              <th>Trạng thái</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong style="color: #fff; font-family: var(--font-code);">e554019 • mssql-qlgrab</strong></td>
+              <td><span class="badge badge-green">mcr.microsoft.com/mssql/server:2022</span></td>
+              <td><code>0.0.0.0:1433->1433/tcp</code></td>
+              <td><strong style="color: var(--primary);">4.2%</strong></td>
+              <td>380.5 MB / 2 GB</td>
+              <td><span class="badge badge-green">🟢 QLGRAB Online</span></td>
+            </tr>
+            <tr>
+              <td><strong style="color: #fff; font-family: var(--font-code);">c8a190f • api-gateway</strong></td>
+              <td><span class="badge badge-purple">kong:3.4-alpine</span></td>
+              <td><code>0.0.0.0:8000->8000/tcp</code></td>
+              <td><strong style="color: var(--primary);">2.4%</strong></td>
+              <td>42.5 MB / 512 MB</td>
+              <td><span class="badge badge-green">🟢 Healthy</span></td>
+            </tr>
+            <tr>
+              <td><strong style="color: #fff; font-family: var(--font-code);">f9021ab • routing-service</strong></td>
+              <td><span class="badge badge-blue">ridego/routing:latest</span></td>
+              <td><code>0.0.0.0:8081->8081/tcp</code></td>
+              <td><strong style="color: var(--secondary);">8.7%</strong></td>
+              <td>128.0 MB / 1 GB</td>
+              <td><span class="badge badge-green">🟢 Healthy</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <div id="app-footer"></div>
+
+  <script src="js/common.js"></script>
+  <script src="js/sql_connector.js"></script>
+  <script>
+    function setQueryPreset(query) {
+      document.getElementById('sql-console-input').value = query;
+      runConsoleSqlQuery();
+    }
+
+    function runConsoleSqlQuery() {
+      const input = document.getElementById('sql-console-input').value;
+      const resultData = window.executeSqlOnQlgrab(input);
+      const wrapper = document.getElementById('sql-result-table-wrapper');
+
+      if (Array.isArray(resultData) && resultData.length > 0) {
+        const keys = Object.keys(resultData[0]);
+        wrapper.innerHTML = `
+          <table class="custom-table" style="font-size: 0.85rem;">
+            <thead>
+              <tr>
+                ${keys.map(k => `<th>${k}</th>`).join('')}
+              </tr>
+            </thead>
+            <tbody>
+              ${resultData.map(row => `
+                <tr>
+                  ${keys.map(k => `<td>${row[k] !== null ? row[k] : '<em style="color:#64748b;">NULL</em>'}</td>`).join('')}
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+      } else {
+        wrapper.innerHTML = `<pre style="color:var(--primary); font-family:var(--font-code); font-size:0.85rem;">${JSON.stringify(resultData, null, 2)}</pre>`;
+      }
+
+      showToast(`Thực thi query trên CSDL QLGRAB thành công!`, 'success', 'SQL Query Executor');
+    }
+
+    const SQL_TABLE_SPECS = {
+      'NguoiDung': {
+        epic: 'USER & AUTHENTICATION',
+        desc: 'Bảng tài khoản người dùng chung trong CSDL QLGRAB (Khách hàng, Tài xế, Quản trị viên)',
+        cols: [
+          { name: 'ma_nguoi_dung', type: 'INT IDENTITY(1,1)', key: 'PRIMARY KEY', note: 'Mã định danh tự tăng' },
+          { name: 'ho_ten', type: 'NVARCHAR(100)', key: 'NOT NULL', note: 'Họ tên đầy đủ' },
+          { name: 'so_dien_thoai', type: 'VARCHAR(15)', key: 'UNIQUE NOT NULL', note: 'Số điện thoại đăng nhập' },
+          { name: 'email', type: 'VARCHAR(100)', key: 'UNIQUE NULL', note: 'Email liên hệ' },
+          { name: 'mat_khau_hash', type: 'VARCHAR(255)', key: 'NOT NULL', note: 'Mật khẩu đã băm' },
+          { name: 'vai_tro', type: 'VARCHAR(20)', key: 'CHECK IN (...)', note: 'KHACH_HANG, TAI_XE, QUAN_TRI' },
+          { name: 'trang_thai_tai_khoan', type: 'VARCHAR(20)', key: 'CHECK IN (...)', note: 'HOAT_DONG, KHOA, CHO_DUYET' },
+          { name: 'diem_danh_gia_trung_binh', type: 'DECIMAL(3,2)', key: 'DEFAULT 5.00', note: 'Điểm đánh giá trung bình' }
+        ]
+      },
+      'ThongBao': {
+        epic: 'USER & AUTHENTICATION',
+        desc: 'Bảng thông báo hệ thống QLGRAB',
+        cols: [
+          { name: 'ma_thong_bao', type: 'INT IDENTITY(1,1)', key: 'PRIMARY KEY', note: 'Mã thông báo' },
+          { name: 'ma_nguoi_dung', type: 'INT', key: 'FK ➔ NguoiDung', note: 'Người nhận thông báo' },
+          { name: 'tieu_de', type: 'NVARCHAR(200)', key: 'NOT NULL', note: 'Tiêu đề thông báo' },
+          { name: 'noi_dung', type: 'NVARCHAR(MAX)', key: 'NOT NULL', note: 'Nội dung chi tiết' },
+          { name: 'da_doc', type: 'BIT', key: 'DEFAULT 0', note: '0: Chưa đọc, 1: Đã đọc' }
+        ]
+      },
+      'HoSoTaiXe': {
+        epic: 'DRIVER MANAGEMENT',
+        desc: 'Bảng hồ sơ bằng lái và GPS tài xế trong CSDL QLGRAB',
+        cols: [
+          { name: 'ma_tai_xe', type: 'INT', key: 'PK / FK ➔ NguoiDung', note: 'Mã tài xế' },
+          { name: 'so_bang_lai', type: 'VARCHAR(50)', key: 'UNIQUE NOT NULL', note: 'Số bằng lái xe' },
+          { name: 'bien_so_xe', type: 'VARCHAR(20)', key: 'NOT NULL', note: 'Biển số xe' },
+          { name: 'ten_dong_xe', type: 'NVARCHAR(50)', key: 'NOT NULL', note: 'Tên dòng xe' },
+          { name: 'loai_xe', type: 'VARCHAR(20)', key: 'CHECK IN (...)', note: 'XE_MAY, OTO_4_CHO, OTO_7_CHO' },
+          { name: 'trang_thai', type: 'VARCHAR(20)', key: 'CHECK IN (...)', note: 'NGOAI_TUYEN, TRUC_TUYEN, DANG_BAN' },
+          { name: 'vi_do_hien_tai', type: 'DECIMAL(9,6)', key: 'NULL', note: 'GPS Latitude' },
+          { name: 'kinh_do_hien_tai', type: 'DECIMAL(9,6)', key: 'NULL', note: 'GPS Longitude' }
+        ]
+      },
+      'ViTaiXe': {
+        epic: 'DRIVER MANAGEMENT',
+        desc: 'Bảng ví tiền tài xế quản lý số dư khả dụng',
+        cols: [
+          { name: 'ma_vi', type: 'INT IDENTITY(1,1)', key: 'PRIMARY KEY', note: 'Mã ví tài xế' },
+          { name: 'ma_tai_xe', type: 'INT', key: 'UNIQUE FK ➔ NguoiDung', note: 'Mã tài xế' },
+          { name: 'so_du', type: 'DECIMAL(12,2)', key: 'DEFAULT 0.00', note: 'Số dư khả dụng' }
+        ]
+      },
+      'LichSuGiaoDichVi': {
+        epic: 'DRIVER MANAGEMENT',
+        desc: 'Bảng lịch sử biến động số dư ví tài xế',
+        cols: [
+          { name: 'ma_giao_dich', type: 'INT IDENTITY(1,1)', key: 'PRIMARY KEY', note: 'Mã giao dịch ví' },
+          { name: 'ma_vi', type: 'INT', key: 'FK ➔ ViTaiXe', note: 'Mã ví tài xế' },
+          { name: 'so_tien', type: 'DECIMAL(12,2)', key: 'NOT NULL', note: 'Số tiền nạp/trừ/rút/thưởng' },
+          { name: 'loai_giao_dich', type: 'VARCHAR(20)', key: 'CHECK IN (...)', note: 'NAP_TIEN, TRU_HOA_HONG, RUT_TIEN, THUONG' },
+          { name: 'noi_dung', type: 'NVARCHAR(255)', key: 'NULL', note: 'Diễn giải giao dịch' }
+        ]
+      },
+      'BangGiaCuoc': {
+        epic: 'ROUTING & TRIP',
+        desc: 'Cấu hình giá mở cửa và đơn giá theo km trong QLGRAB',
+        cols: [
+          { name: 'ma_gia_cuoc', type: 'INT IDENTITY(1,1)', key: 'PRIMARY KEY', note: 'Mã giá cước' },
+          { name: 'loai_xe', type: 'VARCHAR(20)', key: 'CHECK IN (...)', note: 'XE_MAY, OTO_4_CHO, OTO_7_CHO' },
+          { name: 'gia_mo_cua', type: 'DECIMAL(12,2)', key: 'NOT NULL', note: 'Giá 2km đầu' },
+          { name: 'gia_moi_km_tiep_theo', type: 'DECIMAL(12,2)', key: 'NOT NULL', note: 'Giá mỗi km sau' },
+          { name: 'he_so_gio_cao_diem', type: 'DECIMAL(3,2)', key: 'DEFAULT 1.00', note: 'Hệ số giờ cao điểm' }
+        ]
+      },
+      'MaGiamGia': {
+        epic: 'ROUTING & TRIP',
+        desc: 'Bảng mã khuyến mãi trong CSDL QLGRAB',
+        cols: [
+          { name: 'ma_khuyen_mai', type: 'INT IDENTITY(1,1)', key: 'PRIMARY KEY', note: 'Mã khuyến mãi' },
+          { name: 'code_giam_gia', type: 'VARCHAR(20)', key: 'UNIQUE NOT NULL', note: 'Mã voucher (Ví dụ: GRAB20)' },
+          { name: 'phan_tram_giam', type: 'INT', key: 'CHECK (0-100)', note: '% Giảm giá' },
+          { name: 'giam_toi_da', type: 'DECIMAL(12,2)', key: 'NOT NULL', note: 'Số tiền giảm tối đa' },
+          { name: 'gia_tri_don_toi_thieu', type: 'DECIMAL(12,2)', key: 'DEFAULT 0', note: 'Đơn hàng tối thiểu' }
+        ]
+      },
+      'CuocXe': {
+        epic: 'ROUTING & TRIP',
+        desc: 'Bảng cuốc xe trọng tâm trong CSDL QLGRAB',
+        cols: [
+          { name: 'ma_cuoc_xe', type: 'INT IDENTITY(1,1)', key: 'PRIMARY KEY', note: 'Mã cuốc xe' },
+          { name: 'ma_khach_hang', type: 'INT', key: 'FK ➔ NguoiDung', note: 'Khách hàng' },
+          { name: 'ma_tai_xe', type: 'INT', key: 'FK ➔ NguoiDung', note: 'Tài xế nhận chuyến' },
+          { name: 'dia_chi_don', type: 'NVARCHAR(255)', key: 'NOT NULL', note: 'Địa điểm đón' },
+          { name: 'dia_chi_tra', type: 'NVARCHAR(255)', key: 'NOT NULL', note: 'Địa điểm trả' },
+          { name: 'quang_duong_km', type: 'DECIMAL(5,2)', key: 'NOT NULL', note: 'Quãng đường (km)' },
+          { name: 'gia_cuoc_goc', type: 'DECIMAL(12,2)', key: 'NOT NULL', note: 'Giá gốc' },
+          { name: 'so_tien_giam', type: 'DECIMAL(12,2)', key: 'DEFAULT 0.00', note: 'Tiền giảm voucher' },
+          { name: 'tong_tien_thanhtoan', type: 'DECIMAL(12,2)', key: 'NOT NULL', note: 'Tổng tiền phải trả' },
+          { name: 'trang_thai', type: 'VARCHAR(20)', key: 'CHECK IN (...)', note: 'DANG_DAT, DA_NHAN, DANG_DI, HOAN_THANH, HUY_BO' }
+        ]
+      },
+      'NhatKyDiChuyen': {
+        epic: 'ROUTING & TRIP',
+        desc: 'Bảng nhật ký vị trí GPS hành trình',
+        cols: [
+          { name: 'ma_nhat_ky', type: 'BIGINT IDENTITY(1,1)', key: 'PRIMARY KEY', note: 'Mã nhật ký GPS' },
+          { name: 'ma_cuoc_xe', type: 'INT', key: 'FK ➔ CuocXe', note: 'Cuốc xe' },
+          { name: 'vi_do', type: 'DECIMAL(9,6)', key: 'NOT NULL', note: 'GPS Latitude' },
+          { name: 'kinh_do', type: 'DECIMAL(9,6)', key: 'NOT NULL', note: 'GPS Longitude' }
+        ]
+      },
+      'ThanhToan': {
+        epic: 'PAYMENT',
+        desc: 'Bảng quản lý thanh toán trong QLGRAB',
+        cols: [
+          { name: 'ma_thanh_toan', type: 'INT IDENTITY(1,1)', key: 'PRIMARY KEY', note: 'Mã thanh toán' },
+          { name: 'ma_cuoc_xe', type: 'INT', key: 'UNIQUE FK ➔ CuocXe', note: 'Cuốc xe' },
+          { name: 'phuong_thuc', type: 'VARCHAR(20)', key: 'CHECK IN (...)', note: 'TIEN_MAT, MOMO, THE_NGAN_HANG, VI_DIEN_TU' },
+          { name: 'so_tien', type: 'DECIMAL(12,2)', key: 'NOT NULL', note: 'Số tiền thanh toán' },
+          { name: 'trang_thai', type: 'VARCHAR(20)', key: 'CHECK IN (...)', note: 'CHO_THANH_TOAN, THANH_CONG, THAT_BAI, HOAN_TIEN' }
+        ]
+      },
+      'DanhGia': {
+        epic: 'RATING & REVIEWS',
+        desc: 'Bảng đánh giá sao và bình luận chuyến đi',
+        cols: [
+          { name: 'ma_danh_gia', type: 'INT IDENTITY(1,1)', key: 'PRIMARY KEY', note: 'Mã đánh giá' },
+          { name: 'ma_cuoc_xe', type: 'INT', key: 'FK ➔ CuocXe', note: 'Cuốc xe' },
+          { name: 'ma_nguoi_danh_gia', type: 'INT', key: 'FK ➔ NguoiDung', note: 'Người gửi đánh giá' },
+          { name: 'so_sao', type: 'INT', key: 'CHECK (1-5)', note: 'Số sao' },
+          { name: 'noi_dung_binh_luan', type: 'NVARCHAR(500)', key: 'NULL', note: 'Bình luận' }
+        ]
+      }
+    };
+
+    function showSqlTable(tableName) {
+      document.querySelectorAll('.sql-table-tab').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+
+      const data = SQL_TABLE_SPECS[tableName];
+      if (!data) return;
+
+      const container = document.getElementById('sql-table-detail-container');
+      container.innerHTML = `
+        <div style="background: rgba(15, 23, 42, 0.8); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+            <h3 style="color: #fff; font-size: 1.2rem;">CREATE TABLE ${tableName}</h3>
+            <span class="badge badge-purple">${data.epic}</span>
+          </div>
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">${data.desc}</p>
+
+          <div class="custom-table-wrapper">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Tên cột (Column Name)</th>
+                  <th>Kiểu dữ liệu (Data Type)</th>
+                  <th>Khóa / Ràng buộc (Constraint)</th>
+                  <th>Mô tả (Description)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${data.cols.map(c => `
+                  <tr>
+                    <td><strong style="color: #fff; font-family: var(--font-code);">${c.name}</strong></td>
+                    <td><code style="color: var(--secondary);">${c.type}</code></td>
+                    <td><span class="badge ${c.key.includes('PRIMARY') ? 'badge-green' : (c.key.includes('FOREIGN') ? 'badge-amber' : 'badge-blue')}">${c.key}</span></td>
+                    <td style="color: var(--text-muted);">${c.note}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      showSqlTable('NguoiDung');
+      runConsoleSqlQuery();
+    });
+  </script>
+</body>
+</html>

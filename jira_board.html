@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bảng Quản Lý Dự Án Jira (5 SQL Epics) - Ride-Hailing Platform | Nhóm 4</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .epic-filter-btn {
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-full);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .epic-filter-btn.active {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: var(--primary);
+      color: #fff;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+    }
+
+    .kanban-col-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      background: rgba(15, 23, 42, 0.8);
+      border-radius: var(--radius-md) var(--radius-md) 0 0;
+      border: 1px solid var(--border-color);
+      border-bottom: none;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #fff;
+    }
+    .kanban-col-body {
+      background: rgba(10, 14, 26, 0.5);
+      border: 1px solid var(--border-color);
+      border-radius: 0 0 var(--radius-md) var(--radius-md);
+      padding: 1rem;
+      min-height: 500px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <div id="app-header"></div>
+
+  <main class="container">
+    <div class="page-header">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <h1 class="page-title">📊 Jira Project Board (Kanban Aligned with 11 SQL Tables)</h1>
+          <p class="page-subtitle">Quản lý User Stories & Tasks thuộc 5 Epics CSDL: USER, DRIVER, ROUTING, PAYMENT, RATING</p>
+        </div>
+        <button class="btn btn-primary" onclick="openAddTaskModal()">
+          <span>➕</span> Tạo Task Jira Mới
+        </button>
+      </div>
+    </div>
+
+    <!-- Epic Filters -->
+    <div class="card" style="margin-bottom: 2rem; padding: 1rem 1.5rem;">
+      <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+        <span style="font-weight: 700; font-size: 0.9rem; color: #fff;">Lọc theo SQL Epic:</span>
+        <button id="btn-epic-all" class="epic-filter-btn active" onclick="filterByEpic('ALL')">🌐 Tất Cả (All Epics)</button>
+        <button id="btn-epic-user" class="epic-filter-btn" onclick="filterByEpic('USER')">🟢 1. USER & AUTH</button>
+        <button id="btn-epic-driver" class="epic-filter-btn" onclick="filterByEpic('DRIVER')">🔵 2. DRIVER</button>
+        <button id="btn-epic-routing" class="epic-filter-btn" onclick="filterByEpic('ROUTING')">🟣 3. ROUTING & TRIP</button>
+        <button id="btn-epic-payment" class="epic-filter-btn" onclick="filterByEpic('PAYMENT')">🟡 4. PAYMENT</button>
+        <button id="btn-epic-rating" class="epic-filter-btn" onclick="filterByEpic('RATING')">🔴 5. RATING</button>
+      </div>
+    </div>
+
+    <!-- Kanban 4 Columns Grid -->
+    <div class="grid-4">
+      <!-- Column 1: TO DO -->
+      <div>
+        <div class="kanban-col-header" style="border-top: 3px solid var(--accent-blue);">
+          <span>📋 TO DO (Backlog)</span>
+          <span id="count-todo" class="badge badge-blue">0</span>
+        </div>
+        <div id="col-todo" class="kanban-col-body">
+          <!-- Tasks injected by js/jira.js -->
+        </div>
+      </div>
+
+      <!-- Column 2: IN PROGRESS -->
+      <div>
+        <div class="kanban-col-header" style="border-top: 3px solid var(--accent-amber);">
+          <span>⚙️ IN PROGRESS</span>
+          <span id="count-in-progress" class="badge badge-amber">0</span>
+        </div>
+        <div id="col-in-progress" class="kanban-col-body">
+          <!-- Tasks injected by js/jira.js -->
+        </div>
+      </div>
+
+      <!-- Column 3: IN REVIEW -->
+      <div>
+        <div class="kanban-col-header" style="border-top: 3px solid var(--accent-purple);">
+          <span>🔍 IN REVIEW</span>
+          <span id="count-in-review" class="badge badge-purple">0</span>
+        </div>
+        <div id="col-in-review" class="kanban-col-body">
+          <!-- Tasks injected by js/jira.js -->
+        </div>
+      </div>
+
+      <!-- Column 4: DONE -->
+      <div>
+        <div class="kanban-col-header" style="border-top: 3px solid var(--primary);">
+          <span>✅ DONE</span>
+          <span id="count-done" class="badge badge-green">0</span>
+        </div>
+        <div id="col-done" class="kanban-col-body">
+          <!-- Tasks injected by js/jira.js -->
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Add New Task Modal -->
+  <div id="add-task-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(8px);">
+    <div class="card" style="width: 90%; max-width: 540px; padding: 2rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h2 style="color: #fff; font-size: 1.2rem;">➕ Tạo User Story / Task Jira Mới</h2>
+        <button onclick="closeAddTaskModal()" style="background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer;">✕</button>
+      </div>
+
+      <form onsubmit="createNewTask(event)">
+        <div style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem;">
+          <div>
+            <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.4rem;">Tên User Story / Task:</label>
+            <input type="text" id="new-task-title" required placeholder="Ví dụ: Tích hợp mã giảm giá MaGiamGia" style="width: 100%; padding: 0.75rem; background: #090d16; border: 1px solid var(--border-color); border-radius: var(--radius-md); color: #fff;">
+          </div>
+
+          <div class="grid-2">
+            <div>
+              <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.4rem;">Thuộc SQL Epic:</label>
+              <select id="new-task-epic" style="width: 100%; padding: 0.75rem; background: #090d16; border: 1px solid var(--border-color); border-radius: var(--radius-md); color: #fff;">
+                <option value="USER">USER (NguoiDung, ThongBao)</option>
+                <option value="DRIVER">DRIVER (HoSoTaiXe, ViTaiXe)</option>
+                <option value="ROUTING">ROUTING (BangGiaCuoc, CuocXe)</option>
+                <option value="PAYMENT">PAYMENT (ThanhToan)</option>
+                <option value="RATING">RATING (DanhGia)</option>
+              </select>
+            </div>
+
+            <div>
+              <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.4rem;">Mức độ ưu tiên:</label>
+              <select id="new-task-priority" style="width: 100%; padding: 0.75rem; background: #090d16; border: 1px solid var(--border-color); border-radius: var(--radius-md); color: #fff;">
+                <option value="P0">P0 - Bắt buộc (Blocker)</option>
+                <option value="P1">P1 - Cao (High)</option>
+                <option value="P2">P2 - Trung bình (Medium)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div>
+              <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.4rem;">Story Points:</label>
+              <input type="number" id="new-task-points" value="5" min="1" max="13" style="width: 100%; padding: 0.75rem; background: #090d16; border: 1px solid var(--border-color); border-radius: var(--radius-md); color: #fff;">
+            </div>
+
+            <div>
+              <label style="display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.4rem;">Người thực hiện (Assignee):</label>
+              <input type="text" id="new-task-assignee" value="Trần Thị B" style="width: 100%; padding: 0.75rem; background: #090d16; border: 1px solid var(--border-color); border-radius: var(--radius-md); color: #fff;">
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+          <button type="button" class="btn btn-secondary" onclick="closeAddTaskModal()">Hủy</button>
+          <button type="submit" class="btn btn-primary">Tạo Task Mới</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="app-footer"></div>
+
+  <script src="js/common.js"></script>
+  <script src="js/jira.js"></script>
+</body>
+</html>

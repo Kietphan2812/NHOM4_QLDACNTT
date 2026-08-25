@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ứng Dụng Đặt Xe GrabRide - Khách Hàng</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <!-- Leaflet.js Real OpenStreetMap Integration -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    .vehicle-option {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.2rem;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      background: rgba(15, 23, 42, 0.6);
+      cursor: pointer;
+      transition: all 0.25s ease;
+      margin-bottom: 0.75rem;
+    }
+    .vehicle-option:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+    .vehicle-option.selected {
+      border-color: var(--grab-green);
+      background: rgba(0, 177, 79, 0.12);
+      box-shadow: 0 0 15px var(--grab-green-glow);
+    }
+
+    .payment-option {
+      padding: 0.6rem 1rem;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #94a3b8;
+      transition: all 0.2s;
+    }
+    .payment-option.selected {
+      background: rgba(0, 177, 79, 0.2);
+      border-color: var(--grab-green);
+      color: #fff;
+    }
+
+    .star-btn {
+      font-size: 2.2rem;
+      color: #475569;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .star-btn:hover {
+      color: #ffb400;
+      transform: scale(1.2);
+    }
+  </style>
+</head>
+<body>
+  <!-- Header Navbar -->
+  <div id="app-header"></div>
+
+  <main class="container">
+    <div class="page-header">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <h1 class="page-title">📱 Ứng Dụng Đặt Xe GrabRide</h1>
+          <p class="page-subtitle">Tìm kiếm địa điểm thật ngoài đời (OpenStreetMap Geocoding), tính cước tự động & GPS real-time</p>
+        </div>
+        <span class="badge badge-green" style="font-size: 0.85rem; padding: 0.4rem 0.8rem;">Real-World Nominatim Geocoding</span>
+      </div>
+    </div>
+
+    <!-- Route Quick Presets -->
+    <div class="card" style="margin-bottom: 1.5rem; padding: 1rem 1.5rem;">
+      <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+        <span style="font-size: 0.9rem; font-weight: 700; color: var(--grab-green);">📍 Tuyến Đặt Nhanh:</span>
+        <button class="btn btn-secondary btn-sm" onclick="selectPresetLocations('Đại Học Bách Khoa TP.HCM', 'Sân Bay Tân Sơn Nhất', 7.4, 18, 10.7721, 106.6578, 10.8185, 106.6588)">
+          ✈️ Bách Khoa ➔ Sân Bay TSN (7.4 km)
+        </button>
+        <button class="btn btn-secondary btn-sm" onclick="selectPresetLocations('Chợ Bến Thành, Quận 1', 'Khu Công Nghệ Cao, Thành phố Thủ Đức', 16.2, 35, 10.7725, 106.6980, 10.8520, 106.7890)">
+          🏬 Bến Thành ➔ Hi-tech Park (16.2 km)
+        </button>
+        <button class="btn btn-secondary btn-sm" onclick="selectPresetLocations('Landmark 81, Bình Thạnh', 'Hồ Hoàn Kiếm, Hà Nội', 1150, 1440, 10.7950, 106.7218, 21.0285, 105.8542)">
+          🏙️ Landmark 81 ➔ Hồ Hoàn Kiếm Hà Nội (1,150 km)
+        </button>
+      </div>
+    </div>
+
+    <div class="grid-2" style="align-items: start;">
+      <!-- Left Column: Booking Form Controls -->
+      <div>
+        <div id="booking-main-card" class="card">
+          <div class="card-header">
+            <div class="card-title">🚘 Đặt Chuyến Đi Grab</div>
+            <span class="badge badge-green">Real-world Search Active</span>
+          </div>
+
+          <!-- Pickup & Dropoff Inputs with Autocomplete -->
+          <div style="display: flex; flex-direction: column; gap: 1.25rem; margin-bottom: 1.5rem;">
+            <!-- Pickup Autocomplete Input -->
+            <div class="autocomplete-container">
+              <label style="display: block; font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.4rem; font-weight: 600;">
+                📍 Điểm Đón Khách (Nhập địa điểm bất kỳ ngoài đời):
+              </label>
+              <input type="text" id="input-pickup" value="Đại Học Bách Khoa TP.HCM" autocomplete="off"
+                placeholder="Ví dụ: Chợ Bến Thành, Landmark 81, Keangnam..."
+                style="width: 100%; padding: 0.8rem 1rem; background: #090d16; border: 1px solid var(--grab-green); border-radius: var(--radius-md); color: #fff; font-family: var(--font-main);">
+              <div id="pickup-suggestions" class="autocomplete-suggestions"></div>
+            </div>
+
+            <!-- Dropoff Autocomplete Input -->
+            <div class="autocomplete-container">
+              <label style="display: block; font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.4rem; font-weight: 600;">
+                🏁 Điểm Đến (Nhập địa điểm bất kỳ ngoài đời):
+              </label>
+              <input type="text" id="input-dropoff" value="Sân Bay Tân Sơn Nhất" autocomplete="off"
+                placeholder="Ví dụ: Bệnh viện Chợ Rẫy, Hồ Hoàn Kiếm..."
+                style="width: 100%; padding: 0.8rem 1rem; background: #090d16; border: 1px solid var(--grab-green); border-radius: var(--radius-md); color: #fff; font-family: var(--font-main);">
+              <div id="dropoff-suggestions" class="autocomplete-suggestions"></div>
+            </div>
+
+            <div id="est-info-display" style="font-size: 0.85rem; color: var(--accent-cyan); background: rgba(6, 182, 212, 0.1); padding: 0.75rem 1rem; border-radius: var(--radius-sm); font-weight: 600;">
+              Khoảng cách: 7.4 km • Thời gian di chuyển dự kiến: ~18 phút
+            </div>
+          </div>
+
+          <!-- Vehicle Type Selector -->
+          <div style="margin-bottom: 1.5rem;">
+            <label style="display: block; font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.6rem; font-weight: 600;">
+              🚗 Chọn Phương Tiện Di Chuyển:
+            </label>
+
+            <!-- GrabBike -->
+            <div id="vehicle-opt-XE_MAY" class="vehicle-option" onclick="setVehicle('XE_MAY')">
+              <div style="display: flex; align-items: center; gap: 0.9rem;">
+                <div class="grab-icon-sm">
+                  <svg width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M 8 18 C 10 14, 16 12, 22 15 C 24 16, 25 18, 25 20 L 7 20 Z" fill="#38bdf8" stroke="#000" stroke-width="1.5"/>
+                    <circle cx="8" cy="22" r="4" fill="#1e293b" stroke="#fff" stroke-width="1.5"/>
+                    <circle cx="24" cy="22" r="4" fill="#1e293b" stroke="#fff" stroke-width="1.5"/>
+                  </svg>
+                </div>
+                <div>
+                  <div style="font-weight: 700; color: #fff;">GrabBike</div>
+                  <div style="font-size: 0.75rem; color: #94a3b8;">Di chuyển nhanh chóng trong giờ cao điểm</div>
+                </div>
+              </div>
+              <div id="price-XE_MAY" style="font-weight: 800; color: var(--grab-green); font-size: 1.05rem;">43.700 VNĐ</div>
+            </div>
+
+            <!-- GrabCar 4 Chỗ -->
+            <div id="vehicle-opt-OTO_4_CHO" class="vehicle-option selected" onclick="setVehicle('OTO_4_CHO')">
+              <div style="display: flex; align-items: center; gap: 0.9rem;">
+                <div class="grab-icon-sm">
+                  <svg width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M 6 18 C 6 15, 9 10, 12 10 L 20 10 C 23 10, 26 15, 26 18 L 27 21 L 5 21 Z" fill="#ef4444" stroke="#000" stroke-width="1.5"/>
+                    <circle cx="9" cy="22" r="3.5" fill="#1e293b" stroke="#fff" stroke-width="1.5"/>
+                    <circle cx="23" cy="22" r="3.5" fill="#1e293b" stroke="#fff" stroke-width="1.5"/>
+                  </svg>
+                </div>
+                <div>
+                  <div style="font-weight: 700; color: #fff;">GrabCar 4 Chỗ</div>
+                  <div style="font-size: 0.75rem; color: #94a3b8;">Xe sedan đời mới, riêng tư & máy lạnh mát rượi</div>
+                </div>
+              </div>
+              <div id="price-OTO_4_CHO" style="font-weight: 800; color: var(--grab-green); font-size: 1.05rem;">80.700 VNĐ</div>
+            </div>
+
+            <!-- GrabCar 7 Chỗ -->
+            <div id="vehicle-opt-OTO_7_CHO" class="vehicle-option" onclick="setVehicle('OTO_7_CHO')">
+              <div style="display: flex; align-items: center; gap: 0.9rem;">
+                <div class="grab-icon-sm">
+                  <svg width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="5" y="12" width="22" height="10" rx="3" fill="#3b82f6" stroke="#000" stroke-width="1.5"/>
+                    <circle cx="9" cy="22" r="3.5" fill="#1e293b" stroke="#fff" stroke-width="1.5"/>
+                    <circle cx="23" cy="22" r="3.5" fill="#1e293b" stroke="#fff" stroke-width="1.5"/>
+                  </svg>
+                </div>
+                <div>
+                  <div style="font-weight: 700; color: #fff;">GrabCar 7 Chỗ</div>
+                  <div style="font-size: 0.75rem; color: #94a3b8;">Rộng rãi cho cả gia đình & hành lý</div>
+                </div>
+              </div>
+              <div id="price-OTO_7_CHO" style="font-weight: 800; color: var(--grab-green); font-size: 1.05rem;">102.900 VNĐ</div>
+            </div>
+
+            <!-- GrabCar Premium -->
+            <div id="vehicle-opt-OTO_PREMIUM" class="vehicle-option" onclick="setVehicle('OTO_PREMIUM')">
+              <div style="display: flex; align-items: center; gap: 0.9rem;">
+                <div class="grab-icon-sm">
+                  <svg width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M 5 18 C 5 13, 9 9, 14 9 L 18 9 C 23 9, 27 13, 27 18 L 27 21 L 5 21 Z" fill="#8b5cf6" stroke="#fff" stroke-width="1.5"/>
+                    <circle cx="9" cy="22" r="3.5" fill="#1e293b" stroke="#fbbf24" stroke-width="1.5"/>
+                    <circle cx="23" cy="22" r="3.5" fill="#1e293b" stroke="#fbbf24" stroke-width="1.5"/>
+                  </svg>
+                </div>
+                <div>
+                  <div style="font-weight: 700; color: #fff;">GrabCar Premium (VinFast VF8)</div>
+                  <div style="font-size: 0.75rem; color: #94a3b8;">Xe điện hạng sang, dịch vụ 5 sao đẳng cấp</div>
+                </div>
+              </div>
+              <div id="price-OTO_PREMIUM" style="font-weight: 800; color: var(--grab-green); font-size: 1.05rem;">170.600 VNĐ</div>
+            </div>
+          </div>
+
+          <!-- Promo Code Input -->
+          <div style="margin-bottom: 1.5rem; background: rgba(0, 177, 79, 0.08); padding: 1rem; border-radius: var(--radius-md); border: 1px solid rgba(0, 177, 79, 0.25);">
+            <label style="display: block; font-size: 0.85rem; color: var(--grab-green); font-weight: 700; margin-bottom: 0.5rem;">
+              🎟️ Nhập Mã Khuyến Mãi (Grab Promo):
+            </label>
+            <div style="display: flex; gap: 0.5rem;">
+              <input type="text" id="input-promo-code" placeholder="Nhập code: GRAB20 hoặc GOJEKMOI" 
+                style="flex: 1; padding: 0.6rem 0.8rem; background: #090d16; border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: #fff; text-transform: uppercase; font-weight: 700; font-family: var(--font-code);">
+              <button class="btn btn-grab" style="padding: 0.6rem 1.2rem;" onclick="applyPromoCode()">Áp Dụng</button>
+            </div>
+            <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.4rem;">
+              Gợi ý mã hot: <strong style="color:#fff;">GRAB20</strong> (Giảm 20% max 30k), <strong style="color:#fff;">GOJEKMOI</strong> (Giảm 50% max 50k)
+            </div>
+          </div>
+
+          <!-- Payment Options -->
+          <div style="margin-bottom: 1.5rem;">
+            <label style="display: block; font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.6rem; font-weight: 600;">
+              💳 Phương Thức Thanh Toán:
+            </label>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <div id="pay-opt-momo" class="payment-option selected" onclick="setPayment('MOMO')">🟣 Ví MoMo</div>
+              <div id="pay-opt-tien_mat" class="payment-option" onclick="setPayment('TIEN_MAT')">💵 Tiền mặt</div>
+              <div id="pay-opt-the_ngan_hang" class="payment-option" onclick="setPayment('THE_NGAN_HANG')">💳 Thẻ Ngân Hàng</div>
+              <div id="pay-opt-vi_dien_tu" class="payment-option" onclick="setPayment('VI_DIEN_TU')">📱 Ví Điện Tử</div>
+            </div>
+          </div>
+
+          <!-- Fare Breakdowns & Booking Action -->
+          <div style="padding-top: 1rem; border-top: 1px solid var(--border-color);">
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.3rem;">
+              <span>Giá cước gốc:</span>
+              <span id="base-fare-display" style="font-weight: 700; color: #fff;">80.700 VNĐ</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--accent-red); margin-bottom: 0.6rem;">
+              <span>Khuyến mãi giảm:</span>
+              <span id="discount-fare-display" style="font-weight: 700;">-0 VNĐ</span>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-size: 0.8rem; color: #94a3b8;">Tổng cước chuyến đi:</div>
+                <div id="total-fare-display" style="font-size: 1.7rem; font-weight: 800; color: var(--grab-green);">80.700 VNĐ</div>
+              </div>
+              <button class="btn btn-grab" style="padding: 0.9rem 2.2rem; font-size: 1.1rem;" onclick="startBookingProcess()">
+                <span>🚖</span> ĐẶT XE NGAY
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Searching State -->
+        <div id="searching-card" class="card" style="display: none; text-align: center; padding: 3rem 2rem;">
+          <div style="font-size: 4rem; margin-bottom: 1rem; animation: pulseRing 1.5s infinite;">📡</div>
+          <h2 style="color: #fff; font-size: 1.4rem; margin-bottom: 0.5rem;">Đang Tìm Tài Xế Grab Gần Bạn...</h2>
+          <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 1.5rem;">
+            Hệ thống đang phát tín hiệu định vị GPS và tìm tài xế phù hợp nhất.
+          </p>
+          <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 99px; overflow: hidden;">
+            <div style="width: 60%; height: 100%; background: linear-gradient(90deg, var(--grab-green), var(--accent-cyan)); animation: slideInRight 1s infinite alternate;"></div>
+          </div>
+        </div>
+
+        <!-- Driver Matched & Live Trip Info -->
+        <div id="driver-matched-card" class="card" style="display: none;">
+          <div class="card-header">
+            <div class="card-title" style="color: var(--grab-green);">✅ Đã Tìm Thấy Tài Xế Grab</div>
+            <span class="badge badge-green">TRIP IN PROGRESS</span>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 1.25rem; margin-bottom: 1.5rem; background: rgba(0, 177, 79, 0.08); padding: 1rem; border-radius: var(--radius-md); border: 1px solid rgba(0, 177, 79, 0.25);">
+            <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #00b14f, #008e3f); border-radius: var(--radius-full); display: flex; align-items: center; justify-content: center; font-size: 1.8rem;">
+              👨‍✈️
+            </div>
+            <div style="flex: 1;">
+              <div id="driver-name" style="font-weight: 800; font-size: 1.2rem; color: #fff;">Nguyễn Văn Hùng</div>
+              <div id="driver-model" style="font-size: 0.85rem; color: #94a3b8;">Honda City (Trắng)</div>
+              <div id="driver-rating" style="font-size: 0.85rem; color: var(--accent-amber); font-weight: 600;">⭐ 4.9 (1,420 chuyến)</div>
+            </div>
+            <div style="text-align: right;">
+              <div id="driver-plate" style="font-family: var(--font-code); font-weight: 800; font-size: 1.1rem; color: #fff; background: #000; padding: 0.3rem 0.6rem; border-radius: 6px; border: 1px solid #333;">
+                51H-892.41
+              </div>
+              <div id="driver-phone" style="font-size: 0.8rem; color: var(--accent-cyan); margin-top: 0.4rem;">📞 0908.123.456</div>
+            </div>
+          </div>
+
+          <!-- Trip Status Live Progress Bar -->
+          <div style="margin-bottom: 1rem;">
+            <div id="trip-status-text" style="font-weight: 700; color: #fff; font-size: 0.95rem; margin-bottom: 0.5rem;">
+              🛵 Tài xế đang di chuyển đến điểm đón (Cách bạn 450m)
+            </div>
+            <div style="width: 100%; height: 10px; background: rgba(255,255,255,0.1); border-radius: 99px; overflow: hidden;">
+              <div id="trip-progress-bar" style="width: 15%; height: 100%; background: linear-gradient(90deg, var(--grab-green), var(--accent-cyan)); transition: width 0.4s ease;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Interactive Map & Notifications Drawer -->
+      <div>
+        <div class="card" style="margin-bottom: 1.5rem;">
+          <div class="card-header">
+            <div class="card-title">📍 Bản Đồ Định Vị GPS Thật (OpenStreetMap)</div>
+            <span class="badge badge-green">Real-time Map</span>
+          </div>
+          <div id="user-map-container" class="map-container">
+            <!-- Rendered by js/user_app.js -->
+          </div>
+        </div>
+
+        <!-- Notifications Feed -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🔔 Thông Báo Grab Hộp Thư</div>
+            <span class="badge badge-blue">KHACH_HANG</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <div style="background: rgba(15, 23, 42, 0.6); padding: 0.85rem; border-radius: var(--radius-md); border-left: 3px solid var(--grab-green);">
+              <div style="display: flex; justify-content: space-between; font-weight: 700; color: #fff; font-size: 0.85rem; margin-bottom: 0.2rem;">
+                <span>🎁 Tặng Bạn Mã Khuyến Mãi GRAB20</span>
+                <span style="font-size: 0.75rem; color: #64748b;">Vừa xong</span>
+              </div>
+              <p style="font-size: 0.8rem; color: #94a3b8;">Giảm 20% tối đa 30.000 VNĐ cho chuyến GrabCar tiếp theo.</p>
+            </div>
+
+            <div style="background: rgba(15, 23, 42, 0.6); padding: 0.85rem; border-radius: var(--radius-md); border-left: 3px solid var(--accent-cyan);">
+              <div style="display: flex; justify-content: space-between; font-weight: 700; color: #fff; font-size: 0.85rem; margin-bottom: 0.2rem;">
+                <span>✅ Thanh Toán Chuyến Đi Thành Công</span>
+                <span style="font-size: 0.75rem; color: #64748b;">Hôm qua</span>
+              </div>
+              <p style="font-size: 0.8rem; color: #94a3b8;">Đã thanh toán 80.700 VNĐ qua Ví MoMo. Mã GD: MOMO_8819231.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Rating Modal -->
+  <div id="rating-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(8px);">
+    <div class="card" style="width: 90%; max-width: 480px; text-align: center; padding: 2.5rem 2rem;">
+      <div style="font-size: 3.5rem; margin-bottom: 0.5rem;">🎉</div>
+      <h2 style="color: #fff; font-size: 1.4rem; margin-bottom: 0.5rem;">Chuyến Đi Hoàn Tất!</h2>
+      <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 1.25rem;">
+        Vui lòng đánh giá chất lượng tài xế để giúp Grab nâng cao trải nghiệm dịch vụ.
+      </p>
+
+      <div style="display: flex; justify-content: center; gap: 0.75rem; margin-bottom: 1.25rem;">
+        <span class="star-btn" onclick="submitRating(1)">★</span>
+        <span class="star-btn" onclick="submitRating(2)">★</span>
+        <span class="star-btn" onclick="submitRating(3)">★</span>
+        <span class="star-btn" onclick="submitRating(4)">★</span>
+        <span class="star-btn" onclick="submitRating(5)">★</span>
+      </div>
+
+      <textarea id="rating-comment" placeholder="Viết nhận xét cho tài xế..." 
+        style="width: 100%; height: 80px; padding: 0.75rem; background: #090d16; border: 1px solid var(--border-color); border-radius: var(--radius-md); color: #fff; font-family: var(--font-main); margin-bottom: 1.25rem;"></textarea>
+
+      <button class="btn btn-grab" style="width: 100%; font-size: 1rem;" onclick="submitRating(5)">
+        Gửi Đánh Giá 5 Sao
+      </button>
+    </div>
+  </div>
+
+  <div id="app-footer"></div>
+
+  <script src="js/common.js"></script>
+  <script src="js/sql_connector.js"></script>
+  <script src="js/user_app.js"></script>
+</body>
+</html>

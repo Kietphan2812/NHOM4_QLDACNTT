@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đánh Giá Đạo Đức Dữ Liệu Vị Trí & Báo Cáo Cuối Khóa | Nhóm 4</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- Header -->
+  <div id="app-header"></div>
+
+  <main class="container">
+    <div class="page-header">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <h1 class="page-title">⚖️ Báo Cáo Đạo Đức Dữ Liệu Vị Trí & Tổng Kết Cuối Khóa</h1>
+          <p class="page-subtitle">Đánh giá khía cạnh đạo đức vị trí GPS, bảo mật quyền riêng tư & tổng kết kết quả dự án Nhóm 4</p>
+        </div>
+        <span class="badge badge-green" style="font-size: 0.85rem; padding: 0.4rem 0.8rem;">Ethics & Final Report</span>
+      </div>
+    </div>
+
+    <!-- PART 1: Location Data Ethics Assessment -->
+    <div class="card" style="margin-bottom: 2rem;">
+      <div class="card-header">
+        <div class="card-title">
+          <span>🛡️</span> PHẦN 1: ĐÁNH GIÁ ĐẠO ĐỨC & QUYỀN RIÊNG TƯ DỮ LIỆU VỊ TRÍ (GPS DATA PRIVACY ETHICS)
+        </div>
+        <span class="badge badge-purple">GDPR & Vietnam Cyber Security Standard</span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 1.25rem; font-size: 0.95rem; color: var(--text-muted);">
+        <p>
+          Trong ứng dụng đặt xe công nghệ (Ride-Hailing), dữ liệu vị trí địa lý (GPS) là tài sản vô cùng nhạy cảm. Việc liên tục theo dõi vị trí của cả hành khách và tài xế nếu không được kiểm soát nghiêm ngặt có thể dẫn đến nguy cơ lộ rò thông tin riêng tư, theo dõi bất hợp pháp hoặc bị lạm dụng thương mại. Nhóm 4 đề xuất 5 nguyên tắc đạo đức cốt lõi:
+        </p>
+
+        <div class="grid-2">
+          <div style="background: rgba(15, 23, 42, 0.6); padding: 1.25rem; border-radius: var(--radius-md); border-left: 4px solid var(--primary);">
+            <h3 style="color: #fff; font-size: 1.05rem; margin-bottom: 0.5rem;">1. Quyền Đồng Ý & Minh Bạch (Opt-in Consent)</h3>
+            <p style="font-size: 0.85rem;">
+              Ứng dụng chỉ thu thập tọa độ GPS khi người dùng bật ứng dụng và đang trong chuyến đi. Hiển thị rõ ràng biểu tượng thông báo đang thu thập GPS và cung cấp tùy chọn tắt quyền vị trí ngay khi chuyến đi kết thúc.
+            </p>
+          </div>
+
+          <div style="background: rgba(15, 23, 42, 0.6); padding: 1.25rem; border-radius: var(--radius-md); border-left: 4px solid var(--secondary);">
+            <h3 style="color: #fff; font-size: 1.05rem; margin-bottom: 0.5rem;">2. Mới Ẩn Danh Hóa Dữ Liệu (Data Anonymization)</h3>
+            <p style="font-size: 0.85rem;">
+              Lịch sử chuyến đi lưu trữ trong cơ sở dữ liệu để phục vụ báo cáo doanh thu và phân tích mật độ xe sẽ tự động xóa mối liên kết giữa ID người dùng cá nhân (PII) và chuỗi tọa độ GPS sau 30 ngày.
+            </p>
+          </div>
+
+          <div style="background: rgba(15, 23, 42, 0.6); padding: 1.25rem; border-radius: var(--radius-md); border-left: 4px solid var(--accent-purple);">
+            <h3 style="color: #fff; font-size: 1.05rem; margin-bottom: 0.5rem;">3. Kỹ Thuật Che Mờ Vị Trí (Location Masking)</h3>
+            <p style="font-size: 0.85rem;">
+              Địa chỉ điểm đón/trả hiển thị cho tài xế trước khi nhận cuốc chỉ được làm tròn trong bán kính 100m (Geohash 6 ký tự) để bảo vệ sự riêng tư nhà riêng của hành khách.
+            </p>
+          </div>
+
+          <div style="background: rgba(15, 23, 42, 0.6); padding: 1.25rem; border-radius: var(--radius-md); border-left: 4px solid var(--accent-amber);">
+            <h3 style="color: #fff; font-size: 1.05rem; margin-bottom: 0.5rem;">4. Mã Hóa Đầu Cuối (End-to-End Encryption)</h3>
+            <p style="font-size: 0.85rem;">
+              Mọi gói tin truyền tải tọa độ GPS giữa Mobile App ➔ API Gateway ➔ Redis Cache được mã hóa bằng giao thức TLS 1.3 và thuật toán mã hóa AES-256 bits.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PART 2: Final Synthesis Course Report -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <span>📜</span> PHẦN 2: BÁO CÁO TỔNG KẾT DỰ ÁN QUẢN LÝ DỰ ÁN CNTT (NHÓM 4)
+        </div>
+        <span class="badge badge-green">Final Project Synthesis</span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <div>
+          <h3 style="color: var(--primary); font-size: 1.1rem; margin-bottom: 0.75rem;">1. Kết Quả Đạt Được (Key Deliverables)</h3>
+          <div class="custom-table-wrapper">
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Yêu cầu đề bài</th>
+                  <th>Sản phẩm / Kết quả thực hiện của Nhóm 4</th>
+                  <th>Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong style="color:#fff;">Mục tiêu & Bên liên quan</strong></td>
+                  <td>Đã xây dựng Ma trận Stakeholders, KPIs ghép chuyến &lt; 15s và độ sẵn sàng 99.99%.</td>
+                  <td><span class="badge badge-green">Hoàn thành 100%</span></td>
+                </tr>
+                <tr>
+                  <td><strong style="color:#fff;">Lựa chọn & Ưu tiên dự án</strong></td>
+                  <td>Lập ma trận RICE Scoring phân loại ưu tiên các tính năng P0, P1, P2.</td>
+                  <td><span class="badge badge-green">Hoàn thành 100%</span></td>
+                </tr>
+                <tr>
+                  <td><strong style="color:#fff;">Kế hoạch Nhân sự & Cloud</strong></td>
+                  <td>Phân bổ 5 thành viên và thiết kế hạ tầng AWS EKS, RDS PostGIS, ElastiCache Redis.</td>
+                  <td><span class="badge badge-green">Hoàn thành 100%</span></td>
+                </tr>
+                <tr>
+                  <td><strong style="color:#fff;">Jira Project Management</strong></td>
+                  <td>Bảng Kanban tương tác quản lý 4 Epics: User, Driver, Payment, Routing.</td>
+                  <td><span class="badge badge-green">Hoàn thành 100%</span></td>
+                </tr>
+                <tr>
+                  <td><strong style="color:#fff;">Confluence Architecture & Docker</strong></td>
+                  <td>Tài liệu 6 Microservices, Docker Compose topology viewer & Monitor status real-time.</td>
+                  <td><span class="badge badge-green">Hoàn thành 100%</span></td>
+                </tr>
+                <tr>
+                  <td><strong style="color:#fff;">Jenkins CI/CD & Slack Alert</strong></td>
+                  <td>Trình giả lập Pipeline 5 Stages, Trigger build và tự động gửi thông báo lỗi vào Slack.</td>
+                  <td><span class="badge badge-green">Hoàn thành 100%</span></td>
+                </tr>
+                <tr>
+                  <td><strong style="color:#fff;">Đánh giá Đạo đức Dữ liệu GPS</strong></td>
+                  <td>Báo cáo 5 nguyên tắc đạo đức vị trí và tuân thủ GDPR & Luật An ninh mạng VN.</td>
+                  <td><span class="badge badge-green">Hoàn thành 100%</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div>
+          <h3 style="color: var(--secondary); font-size: 1.1rem; margin-bottom: 0.75rem;">2. Bài Học Kinh Nghiệm & Đề Xuất Phát Triển</h3>
+          <div style="background: rgba(15, 23, 42, 0.6); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); font-size: 0.9rem; color: var(--text-muted); line-height: 1.7;">
+            <p style="margin-bottom: 0.75rem;">
+              • <strong style="color: #fff;">Quản lý Tiến độ Agile/Scrum:</strong> Việc chia tách dự án thành 4 Epics rõ ràng (User, Driver, Payment, Routing) trên bảng Jira đã giúp nhóm phân chia công việc minh bạch và giảm thiểu xung đột mã nguồn.
+            </p>
+            <p style="margin-bottom: 0.75rem;">
+              • <strong style="color: #fff;">Tự động hóa DevOps & Giám sát Slack:</strong> Tích hợp Slack Webhook báo lỗi build lập tức giúp đội phát triển khắc phục lỗi trong vòng vài phút thay vì chờ đợi báo cáo thủ công.
+            </p>
+            <p>
+              • <strong style="color: #fff;">Hướng phát triển tương lai:</strong> Mở rộng hệ thống AI/ML để dự đoán nhu cầu đặt xe theo giờ (Surge Pricing Engine) và tối ưu hóa tuyến đường giao hàng đa điểm (Ride-Hailing + Food Delivery).
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="app-footer"></div>
+
+  <script src="js/common.js"></script>
+</body>
+</html>

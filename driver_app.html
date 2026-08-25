@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ứng Dụng Tài Xế GrabDriver - Nhận Cuốc & Ví Doanh Thu</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <!-- Leaflet.js Real OpenStreetMap Integration -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+  <!-- Header Navbar -->
+  <div id="app-header"></div>
+
+  <main class="container">
+    <div class="page-header">
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <h1 class="page-title">🛵 Ứng Dụng Tài Xế GrabDriver</h1>
+          <p class="page-subtitle">Nhận cuốc xe real-time, GPS điều hướng và quản lý số dư Ví tài xế</p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <span id="driver-status-badge" class="badge badge-green">🟢 TRỰC TUYẾN (SẴN SÀNG NHẬN CUỐC)</span>
+          <button id="online-toggle-btn" class="btn btn-secondary" onclick="toggleOnlineStatus()">
+            🔴 Tắt Trực Tuyến
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Key Metrics Cards -->
+    <div class="grid-4" style="margin-bottom: 2rem;">
+      <div class="card">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <div style="width: 50px; height: 50px; background: rgba(0, 177, 79, 0.15); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">💳</div>
+          <div>
+            <div id="driver-wallet-balance" style="font-size: 1.6rem; font-weight: 800; color: #fff;">1.850.000 VNĐ</div>
+            <div style="font-size: 0.8rem; color: #94a3b8;">Số dư Ví Tài Xế (ViTaiXe)</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <div style="width: 50px; height: 50px; background: rgba(6, 182, 212, 0.15); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">💰</div>
+          <div>
+            <div id="driver-earnings-today" style="font-size: 1.6rem; font-weight: 800; color: var(--grab-green);">685.000 VNĐ</div>
+            <div style="font-size: 0.8rem; color: #94a3b8;">Doanh thu hôm nay (9 chuyến)</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <div style="width: 50px; height: 50px; background: rgba(255, 180, 0, 0.15); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">⭐</div>
+          <div>
+            <div style="font-size: 1.6rem; font-weight: 800; color: var(--accent-amber);">4.92 / 5.0</div>
+            <div style="font-size: 0.8rem; color: #94a3b8;">Điểm đánh giá sao trung bình</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <div style="width: 50px; height: 50px; background: rgba(139, 92, 246, 0.15); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">📈</div>
+          <div>
+            <div style="font-size: 1.6rem; font-weight: 800; color: var(--accent-purple);">98.5%</div>
+            <div style="font-size: 0.8rem; color: #94a3b8;">Tỷ lệ nhận cuốc xe</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Trip Card -->
+    <div id="driver-active-trip-card" class="card" style="display: none; margin-bottom: 2rem; border-color: var(--grab-green);">
+      <div class="card-header">
+        <div class="card-title" style="color: var(--grab-green);">🚕 Cuốc Xe Đang Di Chuyển</div>
+        <span class="badge badge-green">GPS NAVIGATION ACTIVE</span>
+      </div>
+
+      <div class="grid-2" style="align-items: center;">
+        <div>
+          <div style="font-size: 1.2rem; font-weight: 800; color: #fff; margin-bottom: 0.5rem;" id="active-passenger">Nguyễn Thu Trang</div>
+          <div style="font-size: 0.9rem; color: #94a3b8; margin-bottom: 0.3rem;">📍 Điểm đón: <strong style="color:#fff;" id="active-pickup">184 Nam Kỳ Khởi Nghĩa, Q.3</strong></div>
+          <div style="font-size: 0.9rem; color: #94a3b8; margin-bottom: 0.75rem;">🏁 Điểm đến: <strong style="color:#fff;" id="active-dropoff">Thảo Điền Pearl, Q.2</strong></div>
+          <div style="font-size: 1.5rem; font-weight: 800; color: var(--grab-green);" id="active-fare">95.000 VNĐ</div>
+        </div>
+
+        <div style="text-align: right;">
+          <button class="btn btn-grab" style="padding: 0.9rem 1.8rem; font-size: 1rem;" onclick="completeDriverTrip()">
+            ✅ Hoàn Thành Chuyến Đi (Trừ 15% Chiết Khấu)
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Middle Grid: Driver Wallet & Navigation Map -->
+    <div class="grid-2" style="margin-bottom: 2rem;">
+      <!-- Driver Wallet Ledger & Actions -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">👛 Quản Lý Ví Tài Xế (ViTaiXe)</div>
+          <div style="display: flex; gap: 0.4rem;">
+            <button class="btn btn-grab btn-sm" onclick="topupWallet()">+ Nạp 200k</button>
+            <button class="btn btn-secondary btn-sm" onclick="withdrawWallet()">- Rút 300k</button>
+          </div>
+        </div>
+
+        <div style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.75rem;">
+          Lịch sử biến động số dư trong bảng <code>LichSuGiaoDichVi</code>:
+        </div>
+
+        <div id="wallet-ledger-list" style="display: flex; flex-direction: column; gap: 0.6rem;">
+          <!-- Injected by js/driver_app.js -->
+        </div>
+      </div>
+
+      <!-- Driver Profile & Navigation Map -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🪪 Hồ Sơ Xe Tài Xế</div>
+          <button class="btn btn-grab btn-sm" onclick="triggerMockRideRequest()">⚡ Giả Lập Cuốc Xe Mới</button>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.85rem; color: #94a3b8; margin-bottom: 1rem; background: rgba(15,23,42,0.5); padding: 0.85rem; border-radius: var(--radius-md);">
+          <div>Bằng lái: <strong style="color:#fff;">B2-892104912</strong> • Biển số: <strong style="color:var(--grab-green);">51H-892.41</strong></div>
+          <div>Dòng xe: <strong style="color:#fff;">Honda City (Trắng)</strong> • Loại: <span class="badge badge-blue">OTO_4_CHO</span></div>
+          <div>Tọa độ GPS: <code style="color:var(--accent-cyan);">10.7740, 106.6590</code></div>
+        </div>
+
+        <div id="driver-map-container" class="map-container" style="height: 180px;">
+          <!-- Rendered by js/driver_app.js -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Trip History Table -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">📜 Lịch Sử Chuyến Đi Hôm Nay</div>
+        <span class="badge badge-green">Completed Trips</span>
+      </div>
+
+      <div class="custom-table-wrapper">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>Mã chuyến</th>
+              <th>Khách hàng</th>
+              <th>Lộ trình (Đón ➔ Đến)</th>
+              <th>Cước phí nhận</th>
+              <th>Trạng thái</th>
+            </tr>
+          </thead>
+          <tbody id="trip-history-table-body">
+            <tr>
+              <td><strong style="color: #fff;">TRIP-9080</strong></td>
+              <td>Lê Hoàng Vũ</td>
+              <td>Vincom Đồng Khởi (Q.1) ➔ Thảo Điền (Q.2)</td>
+              <td><strong style="color: var(--grab-green);">88.000 VNĐ</strong></td>
+              <td><span class="badge badge-green">HOAN_THANH</span></td>
+            </tr>
+            <tr>
+              <td><strong style="color: #fff;">TRIP-9079</strong></td>
+              <td>Trần Minh Quân</td>
+              <td>Bến Xe Miền Đông ➔ Bách Khoa (Q.10)</td>
+              <td><strong style="color: var(--grab-green);">125.000 VNĐ</strong></td>
+              <td><span class="badge badge-green">HOAN_THANH</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- Incoming Ride Request Popup Modal (15s Countdown) -->
+  <div id="ride-request-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(8px);">
+    <div class="card" style="width: 90%; max-width: 500px; border-color: var(--grab-green); box-shadow: 0 0 40px var(--grab-green-glow);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
+        <div style="font-weight: 800; color: var(--grab-green); font-size: 1.2rem; display: flex; align-items: center; gap: 0.5rem;">
+          <span>🔔</span> CUỐC XE MỚI GẦN BẠN
+        </div>
+        <div style="background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); padding: 0.3rem 0.8rem; border-radius: 99px; font-weight: 800; font-size: 1.1rem;">
+          ⏱️ <span id="modal-countdown-num">15</span>s
+        </div>
+      </div>
+
+      <div style="margin-bottom: 1.5rem;">
+        <div style="font-size: 1.2rem; font-weight: 800; color: #fff; margin-bottom: 0.6rem;" id="modal-passenger-name">Nguyễn Thu Trang</div>
+        <div style="background: rgba(15, 23, 42, 0.8); padding: 0.85rem; border-radius: var(--radius-md); font-size: 0.9rem; margin-bottom: 0.75rem;">
+          <div style="color: #94a3b8; margin-bottom: 0.3rem;">📍 Đón: <strong style="color: #fff;" id="modal-pickup-loc">184 Nam Kỳ Khởi Nghĩa, Q.3</strong></div>
+          <div style="color: #94a3b8;">🏁 Đến: <strong style="color: #fff;" id="modal-dropoff-loc">Thảo Điền Pearl, Q.2</strong></div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.2rem;">
+          <div>
+            <span style="font-size: 0.8rem; color: #94a3b8;">Khoảng cách:</span>
+            <span style="font-weight: 700; color: var(--accent-cyan); margin-left: 0.4rem;" id="modal-dist">6.2 km</span>
+          </div>
+          <div>
+            <span style="font-size: 0.8rem; color: #94a3b8;">Thu nhập chuyến:</span>
+            <span style="font-size: 1.4rem; font-weight: 800; color: var(--grab-green); margin-left: 0.4rem;" id="modal-fare">95.000 VNĐ</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <button class="btn btn-danger" style="padding: 0.85rem;" onclick="rejectRideRequest()">
+          ✖️ TỪ CHỐI
+        </button>
+        <button class="btn btn-grab" style="padding: 0.85rem;" onclick="acceptRideRequest()">
+          ✔️ NHẬN CUỐC NGAY
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="app-footer"></div>
+
+  <script src="js/common.js"></script>
+  <script src="js/sql_connector.js"></script>
+  <script src="js/driver_app.js"></script>
+</body>
+</html>
