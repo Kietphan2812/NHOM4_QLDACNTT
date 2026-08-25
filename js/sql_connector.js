@@ -1,10 +1,11 @@
 /* ==========================================================================
    GRAB RIDE PLATFORM - DIRECT REAL-TIME SQL SERVER CONNECTOR
-   Connects Web Frontend directly to PowerShell Server (http://localhost:3000)
-   and handles SELECT, INSERT, UPDATE, and DELETE directly on SQL Server QLGRAB!
+   Relative Endpoint Navigation matching project QLDACNTT
    ========================================================================== */
 
-const API_SERVER_URL = 'http://localhost:3000/api/data';
+const API_SERVER_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ? '/api/data'
+  : 'http://localhost:3000/api/data';
 
 window.SqlConnector = {
   // Fetch live table records directly from SQL Server QLGRAB
@@ -17,7 +18,7 @@ window.SqlConnector = {
         return data;
       }
     } catch (err) {
-      console.warn('[SQL Connector] Server PowerShell http://localhost:3000 not responding.', err);
+      console.warn('[SQL Connector] Server PowerShell not responding.', err);
     }
     return null;
   },
