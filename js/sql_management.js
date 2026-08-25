@@ -1,7 +1,6 @@
 /* ==========================================================================
    GRAB RIDE PLATFORM - SQL DATABASE MANAGEMENT HUB (11 TABLES)
-   Optimized for GitHub Pages (https://kietphan2812.github.io/NHOM4_QLDACNTT/)
-   Includes LocalStorage Persistence, Real-time Sync & Live SQL Connection
+   Includes Intelligent Input Validation & Sanitization for SQL Server 3NF
    ========================================================================== */
 
 let activeSqlTable = 'BangGiaCuoc';
@@ -12,7 +11,8 @@ const DEFAULT_QLGRAB_STATE = {
   BangGiaCuoc: [
     { ma_gia_cuoc: 1, loai_xe: 'XE_MAY', gia_mo_cua: 14000, gia_moi_km_tiep_theo: 5500, he_so_gio_cao_diem: 1.0, ngay_cap_nhat: '2026-08-25 09:28:48' },
     { ma_gia_cuoc: 2, loai_xe: 'OTO_4_CHO', gia_mo_cua: 24000, gia_moi_km_tiep_theo: 10500, he_so_gio_cao_diem: 1.0, ngay_cap_nhat: '2026-08-25 09:28:48' },
-    { ma_gia_cuoc: 3, loai_xe: 'OTO_7_CHO', gia_mo_cua: 30000, gia_moi_km_tiep_theo: 13500, he_so_gio_cao_diem: 1.0, ngay_cap_nhat: '2026-08-25 09:28:48' }
+    { ma_gia_cuoc: 3, loai_xe: 'OTO_7_CHO', gia_mo_cua: 30000, gia_moi_km_tiep_theo: 13500, he_so_gio_cao_diem: 1.0, ngay_cap_nhat: '2026-08-25 09:28:48' },
+    { ma_gia_cuoc: 5, loai_xe: 'OTO_4_CHO', gia_mo_cua: 25000, gia_moi_km_tiep_theo: 11000, he_so_gio_cao_diem: 1.0, ngay_cap_nhat: '2026-08-25 09:49:39' }
   ],
   CuocXe: [
     { ma_cuoc_xe: 1, ma_khach_hang: 1, ma_tai_xe: 2, dia_chi_don: 'Đại Học Bách Khoa (Q.10)', vi_do_don: 10.7721, kinh_do_don: 106.6578, dia_chi_tra: 'Sân Bay Tân Sơn Nhất', vi_do_tra: 10.8185, kinh_do_tra: 106.6588, quang_duong_km: 7.4, thoi_gian_du_kien_phut: 18, gia_cuoc_goc: 80700, so_tien_giam: 0, tong_tien_thanhtoan: 80700, trang_thai: 'HOAN_THANH' }
@@ -52,12 +52,11 @@ const DEFAULT_QLGRAB_STATE = {
   ]
 };
 
-// Persistent State Handler
 let qlgrabDatabaseState = loadPersistentState();
 
 function loadPersistentState() {
   try {
-    const saved = localStorage.getItem('QLGRAB_STATE_V2');
+    const saved = localStorage.getItem('QLGRAB_STATE_V3');
     if (saved) return JSON.parse(saved);
   } catch (e) {
     console.warn('LocalStorage not available');
@@ -67,7 +66,7 @@ function loadPersistentState() {
 
 function savePersistentState() {
   try {
-    localStorage.setItem('QLGRAB_STATE_V2', JSON.stringify(qlgrabDatabaseState));
+    localStorage.setItem('QLGRAB_STATE_V3', JSON.stringify(qlgrabDatabaseState));
   } catch (e) {
     console.warn('Could not save to LocalStorage');
   }
@@ -79,7 +78,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function loadLiveSqlData() {
-  if (window.SqlConnector && window.location.protocol !== 'https:') {
+  if (window.SqlConnector) {
     const liveData = await window.SqlConnector.getTableData(activeSqlTable);
     if (liveData && liveData.length > 0) {
       qlgrabDatabaseState[activeSqlTable] = liveData;
@@ -167,6 +166,49 @@ function renderActiveSqlTable() {
   `;
 }
 
+function renderSmartInputField(key, val, isPk, isEdit) {
+  const isReadOnly = isPk && isEdit;
+  
+  // Specific Dropdown Option Constraints for 3NF SQL Server Schema
+  if (key === 'loai_xe') {
+    return `
+      <select name="${key}" style="width: 100%; padding: 0.7rem; background: #090d16; border: 1px solid var(--grab-green); border-radius: var(--radius-sm); color: #fff; font-family: var(--font-main);">
+        <option value="XE_MAY" ${val === 'XE_MAY' ? 'selected' : ''}>XE_MAY (GrabBike)</option>
+        <option value="OTO_4_CHO" ${val === 'OTO_4_CHO' || !val ? 'selected' : ''}>OTO_4_CHO (GrabCar 4 Chỗ)</option>
+        <option value="OTO_7_CHO" ${val === 'OTO_7_CHO' ? 'selected' : ''}>OTO_7_CHO (GrabCar 7 Chỗ)</option>
+      </select>
+      <div style="font-size:0.75rem; color:#94a3b8; margin-top:0.2rem;">* Chọn 1 trong 3 loại xe chuẩn SQL Server (XE_MAY, OTO_4_CHO, OTO_7_CHO)</div>
+    `;
+  }
+
+  if (key === 'vai_tro') {
+    return `
+      <select name="${key}" style="width: 100%; padding: 0.7rem; background: #090d16; border: 1px solid var(--grab-green); border-radius: var(--radius-sm); color: #fff;">
+        <option value="KHACH_HANG" ${val === 'KHACH_HANG' || !val ? 'selected' : ''}>KHACH_HANG</option>
+        <option value="TAI_XE" ${val === 'TAI_XE' ? 'selected' : ''}>TAI_XE</option>
+        <option value="QUAN_TRI" ${val === 'QUAN_TRI' ? 'selected' : ''}>QUAN_TRI</option>
+      </select>
+    `;
+  }
+
+  if (key === 'trang_thai' || key === 'trang_thai_tai_khoan') {
+    return `
+      <select name="${key}" style="width: 100%; padding: 0.7rem; background: #090d16; border: 1px solid var(--grab-green); border-radius: var(--radius-sm); color: #fff;">
+        <option value="HOAT_DONG" ${val === 'HOAT_DONG' || val === 'TRUC_TUYEN' ? 'selected' : ''}>HOAT_DONG / TRUC_TUYEN</option>
+        <option value="NGOAI_TUYEN" ${val === 'NGOAI_TUYEN' ? 'selected' : ''}>NGOAI_TUYEN</option>
+        <option value="DANG_BAN" ${val === 'DANG_BAN' ? 'selected' : ''}>DANG_BAN</option>
+        <option value="KHOA" ${val === 'KHOA' ? 'selected' : ''}>KHOA</option>
+      </select>
+    `;
+  }
+
+  return `
+    <input type="text" name="${key}" value="${val !== null && val !== undefined ? val : ''}" ${isReadOnly ? 'readonly style="background:#1e293b; color:#94a3b8;"' : ''}
+      placeholder="${isPk ? 'Tự động tạo (hoặc nhập số)' : 'Nhập giá trị hợp lệ'}"
+      style="width: 100%; padding: 0.7rem; background: #090d16; border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: #fff; font-family: var(--font-main);">
+  `;
+}
+
 function openAddDataModal() {
   editingRecordIndex = null;
   const modal = document.getElementById('add-record-modal');
@@ -180,13 +222,12 @@ function openAddDataModal() {
   const dataList = qlgrabDatabaseState[activeSqlTable] || [];
   let sampleRecord = dataList[0] || { ma_id: 1, ten: '' };
 
-  const fieldsHtml = Object.keys(sampleRecord).map(key => `
+  const fieldsHtml = Object.keys(sampleRecord).map((key, kIdx) => `
     <div>
       <label style="display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.3rem; font-weight: 600;">
         ${key}:
       </label>
-      <input type="text" name="${key}" placeholder="Nhập giá trị cho ${key}" 
-        style="width: 100%; padding: 0.7rem; background: #090d16; border: 1px solid var(--border-color); border-radius: var(--radius-sm); color: #fff; font-family: var(--font-main);">
+      ${renderSmartInputField(key, '', kIdx === 0, false)}
     </div>
   `).join('');
 
@@ -210,15 +251,13 @@ function editRecordIndex(idx) {
 
   const fieldsHtml = Object.keys(targetRecord).map((key, kIdx) => {
     let val = targetRecord[key];
-    if (val === null || val === undefined) val = '';
     const isPk = (kIdx === 0);
     return `
       <div>
         <label style="display: block; font-size: 0.8rem; color: ${isPk ? '#94a3b8' : 'var(--grab-green)'}; margin-bottom: 0.3rem; font-weight: 600;">
           ${key} ${isPk ? '(Khóa chính PK - Không sửa)' : ''}:
         </label>
-        <input type="text" name="${key}" value="${val}" ${isPk ? 'readonly style="background:#1e293b; color:#94a3b8;"' : ''}
-          style="width: 100%; padding: 0.7rem; background: #090d16; border: 1px solid var(--grab-green); border-radius: var(--radius-sm); color: #fff; font-family: var(--font-main);">
+        ${renderSmartInputField(key, val, isPk, true)}
       </div>
     `;
   }).join('');
@@ -233,6 +272,15 @@ function closeAddDataModal() {
   editingRecordIndex = null;
 }
 
+// Clean and sanitize input numbers (e.g. "8K" -> 8000)
+function cleanNumber(str) {
+  if (typeof str === 'number') return str;
+  if (!str) return 0;
+  let cleanStr = str.toString().toUpperCase().replace(/K/g, '000').replace(/[^0-9.]/g, '');
+  const num = parseFloat(cleanStr);
+  return isNaN(num) ? 0 : num;
+}
+
 async function saveRecordToSql(event) {
   event.preventDefault();
   const form = event.target;
@@ -241,7 +289,11 @@ async function saveRecordToSql(event) {
 
   formData.forEach((val, key) => {
     if (val !== '') {
-      newObj[key] = isNaN(val) ? val : Number(val);
+      if (key.includes('gia') || key.includes('tien') || key.includes('so_du') || key.includes('he_so') || key.includes('quang_duong')) {
+        newObj[key] = cleanNumber(val);
+      } else {
+        newObj[key] = isNaN(val) ? val : Number(val);
+      }
     }
   });
 
@@ -263,7 +315,7 @@ async function saveRecordToSql(event) {
       if (updated) {
         showToast(`ĐÃ CẬP NHẬT TRỰC TIẾP VÀO SQL SERVER DBO.${activeSqlTable}!`, 'success', 'SQL Server Updated');
       } else {
-        showToast(`Đã lưu cập nhật trên Web! Xuất script hoặc mở server.ps1 để đồng bộ SSMS`, 'success');
+        showToast(`Đã lưu cập nhật trên Web! Bấm 'Xuất Script INSERT INTO' để chèn vào SSMS`, 'success');
       }
     }
   } else {
@@ -278,7 +330,7 @@ async function saveRecordToSql(event) {
       if (saved) {
         showToast(`ĐÃ THÊM MỚI VÀO SQL SERVER DBO.${activeSqlTable}!`, 'success', 'SQL Server Saved');
       } else {
-        showToast(`Đã thêm mới bản ghi! Bấm 'Xuất Script INSERT INTO' để chèn vào SSMS`, 'success');
+        showToast(`Đã thêm mới trên Web! Bấm 'Xuất Script INSERT INTO' để chèn vào SSMS`, 'success');
       }
     }
   }
