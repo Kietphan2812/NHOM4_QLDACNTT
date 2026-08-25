@@ -1,24 +1,24 @@
 /* ==========================================================================
    GRAB RIDE PLATFORM - DIRECT REAL-TIME SQL SERVER CONNECTOR
-   Relative Endpoint Navigation matching project QLDACNTT
+   API_BASE_URL = 'http://localhost:5000/api'
+   Matches exact pattern from project QLDACNTT (Try-Catch / Fallback / Live Sync)
    ========================================================================== */
 
-const API_SERVER_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-  ? '/api/data'
-  : 'http://localhost:3000/api/data';
+const API_BASE_URL = 'http://localhost:5000/api';
 
 window.SqlConnector = {
-  // Fetch live table records directly from SQL Server QLGRAB
+  // Sync live table records directly from SQL Server database QLGRAB
   async getTableData(tableName) {
     try {
-      const res = await fetch(`${API_SERVER_URL}?table=${tableName}`);
+      const res = await fetch(`${API_BASE_URL}/${tableName}`);
       if (res.ok) {
-        const data = await res.json();
-        console.log(`[SQL Server QLGRAB] Loaded ${data.length} records for dbo.${tableName}`);
+        const resData = await res.json();
+        const data = Array.isArray(resData) ? resData : (resData ? [resData] : []);
+        console.log(`[SQL Server QLGRAB] Synced ${data.length} records for dbo.${tableName}`);
         return data;
       }
     } catch (err) {
-      console.warn('[SQL Connector] Server PowerShell not responding.', err);
+      console.warn(`SQL Sync warning for ${tableName}:`, err);
     }
     return null;
   },
@@ -26,21 +26,17 @@ window.SqlConnector = {
   // Insert new record directly into SQL Server QLGRAB
   async insertRecord(tableName, fieldsObj) {
     try {
-      const res = await fetch(API_SERVER_URL, {
+      const res = await fetch(`${API_BASE_URL}/${tableName}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          table: tableName,
-          fields: fieldsObj,
-          isUpdate: false
-        })
+        body: JSON.stringify(fieldsObj)
       });
       if (res.ok) {
         const result = await res.json();
         return result.success;
       }
     } catch (err) {
-      console.warn('[SQL Connector] Could not connect to PowerShell Server', err);
+      console.warn(`SQL Save warning for ${tableName}:`, err);
     }
     return false;
   },
@@ -48,23 +44,17 @@ window.SqlConnector = {
   // Update record directly in SQL Server QLGRAB
   async updateRecord(tableName, pkCol, pkVal, fieldsObj) {
     try {
-      const res = await fetch(API_SERVER_URL, {
-        method: 'POST',
+      const res = await fetch(`${API_BASE_URL}/${tableName}?pkCol=${pkCol}&pkVal=${pkVal}`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          table: tableName,
-          fields: fieldsObj,
-          isUpdate: true,
-          pkCol: pkCol,
-          pkVal: pkVal
-        })
+        body: JSON.stringify(fieldsObj)
       });
       if (res.ok) {
         const result = await res.json();
         return result.success;
       }
     } catch (err) {
-      console.warn('[SQL Connector] Could not connect to PowerShell Server', err);
+      console.warn(`SQL Update warning for ${tableName}:`, err);
     }
     return false;
   },
@@ -72,7 +62,7 @@ window.SqlConnector = {
   // Delete record directly from SQL Server QLGRAB
   async deleteRecord(tableName, pkCol, pkVal) {
     try {
-      const res = await fetch(`${API_SERVER_URL}?table=${tableName}&pkCol=${pkCol}&pkVal=${pkVal}`, {
+      const res = await fetch(`${API_BASE_URL}/${tableName}?pkCol=${pkCol}&pkVal=${pkVal}`, {
         method: 'DELETE'
       });
       if (res.ok) {
@@ -80,7 +70,7 @@ window.SqlConnector = {
         return result.success;
       }
     } catch (err) {
-      console.warn('[SQL Connector] Could not connect to PowerShell Server', err);
+      console.warn(`SQL Delete warning for ${tableName}:`, err);
     }
     return false;
   }

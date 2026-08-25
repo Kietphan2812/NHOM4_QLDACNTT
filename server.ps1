@@ -1,16 +1,16 @@
 # ==============================================================================
 #  GRABRIDE REAL-TIME POWERSHELL WEBSERVER FOR SQL SERVER [QLGRAB]
-#  Serves HTTP API on http://localhost:3000 & connects directly to SQL Server!
+#  Serves API on http://localhost:5000/api & connects directly to SQL Server QLGRAB!
 # ==============================================================================
 
-$port = 3000
+$port = 5000
 $listener = New-Object System.Net.HttpListener
 $listener.Prefixes.Add("http://localhost:$port/")
 $listener.Start()
 
 Write-Host '==========================================================================' -ForegroundColor Green
-Write-Host ' POWERSHELL SERVER IS RUNNING ON http://localhost:3000' -ForegroundColor Cyan
-Write-Host ' CONNECTED DIRECTLY TO SQL SERVER DATABASE QLGRAB' -ForegroundColor Yellow
+Write-Host ' 🚀 BACKEND SERVER IS RUNNING ON http://localhost:5000/api' -ForegroundColor Cyan
+Write-Host ' 🗄️ DIRECT SQL SERVER DATABASE: [QLGRAB]' -ForegroundColor Yellow
 Write-Host '==========================================================================' -ForegroundColor Green
 
 $connectionString = 'Server=.;Database=QLGRAB;Integrated Security=True;TrustServerCertificate=True;'
@@ -43,7 +43,7 @@ function Execute-SqlQuery([string]$query) {
         }
         return ($rows | ConvertTo-Json -Depth 5 -Compress)
     } catch {
-        Write-Host 'SQL Query Exception Error' -ForegroundColor Red
+        Write-Host 'SQL Query Error' -ForegroundColor Red
         return '[]'
     }
 }
@@ -58,7 +58,7 @@ function Execute-SqlNonQuery([string]$query) {
         $conn.Close()
         return $true
     } catch {
-        Write-Host 'SQL Execute Exception Error' -ForegroundColor Red
+        Write-Host 'SQL Execute Error' -ForegroundColor Red
         return $false
     }
 }
@@ -82,59 +82,56 @@ while ($listener.IsListening) {
 
     $rawUrl = $request.RawUrl.Split('?')[0]
 
-    # GET /api/data?table=BangGiaCuoc
-    if ($rawUrl.StartsWith('/api/data') -and $request.HttpMethod -eq 'GET') {
-        $tableName = $request.QueryString['table']
+    # Matching API Route: /api/{tableName}
+    if ($rawUrl.StartsWith('/api/')) {
+        $tableName = $rawUrl.Replace('/api/', '').Trim('/')
         if (-not $tableName) { $tableName = 'BangGiaCuoc' }
-        
-        $jsonResult = Execute-SqlQuery "SELECT * FROM dbo.[$tableName]"
-        $buffer = [System.Text.Encoding]::UTF8.GetBytes($jsonResult)
-        $response.ContentType = 'application/json; charset=utf-8'
-        $response.ContentLength64 = $buffer.Length
-        $response.OutputStream.Write($buffer, 0, $buffer.Length)
-        $response.Close()
-        continue
-    }
 
-    # DELETE /api/data?table=BangGiaCuoc&pkCol=ma_gia_cuoc&pkVal=5
-    if ($rawUrl.StartsWith('/api/data') -and $request.HttpMethod -eq 'DELETE') {
-        $tableName = $request.QueryString['table']
-        $pkCol = $request.QueryString['pkCol']
-        $pkVal = $request.QueryString['pkVal']
-
-        if ($tableName -and $pkCol -and $pkVal) {
-            $deleteQuery = "DELETE FROM dbo.[$tableName] WHERE [$pkCol] = '$pkVal';"
-            Write-Host "Executing SQL Delete: $deleteQuery" -ForegroundColor Red
-            $success = Execute-SqlNonQuery $deleteQuery
-            $resObj = @{ success = $success; message = "Deleted record from SQL Server QLGRAB" }
-        } else {
-            $resObj = @{ success = $false; message = "Missing parameters" }
+        # GET /api/{tableName}
+        if ($request.HttpMethod -eq 'GET') {
+            $jsonResult = Execute-SqlQuery "SELECT * FROM dbo.[$tableName]"
+            $buffer = [System.Text.Encoding]::UTF8.GetBytes($jsonResult)
+            $response.ContentType = 'application/json; charset=utf-8'
+            $response.ContentLength64 = $buffer.Length
+            $response.OutputStream.Write($buffer, 0, $buffer.Length)
+            $response.Close()
+            continue
         }
 
-        $resJson = $resObj | ConvertTo-Json
-        $buffer = [System.Text.Encoding]::UTF8.GetBytes($resJson)
-        $response.ContentType = 'application/json; charset=utf-8'
-        $response.ContentLength64 = $buffer.Length
-        $response.OutputStream.Write($buffer, 0, $buffer.Length)
-        $response.Close()
-        continue
-    }
+        # DELETE /api/{tableName}?pkCol=col&pkVal=val
+        if ($request.HttpMethod -eq 'DELETE') {
+            $pkCol = $request.QueryString['pkCol']
+            $pkVal = $request.QueryString['pkVal']
 
-    # POST /api/data (INSERT OR UPDATE)
-    if ($rawUrl.StartsWith('/api/data') -and $request.HttpMethod -eq 'POST') {
-        $reader = New-Object System.IO.StreamReader($request.InputStream, $request.ContentEncoding)
-        $bodyJson = $reader.ReadToEnd()
-        $reader.Close()
+            if ($pkCol -and $pkVal) {
+                $deleteQuery = "DELETE FROM dbo.[$tableName] WHERE [$pkCol] = '$pkVal';"
+                Write-Host "SQL DELETE: $deleteQuery" -ForegroundColor Red
+                $success = Execute-SqlNonQuery $deleteQuery
+            } else {
+                $success = $false
+            }
 
-        $dataObj = $bodyJson | ConvertFrom-Json
-        $tableName = $dataObj.table
-        $fields = $dataObj.fields
-        $isUpdate = $dataObj.isUpdate
-        $pkCol = $dataObj.pkCol
-        $pkVal = $dataObj.pkVal
+            $resObj = @{ success = $success }
+            $resJson = $resObj | ConvertTo-Json
+            $buffer = [System.Text.Encoding]::UTF8.GetBytes($resJson)
+            $response.ContentType = 'application/json; charset=utf-8'
+            $response.ContentLength64 = $buffer.Length
+            $response.OutputStream.Write($buffer, 0, $buffer.Length)
+            $response.Close()
+            continue
+        }
 
-        if ($isUpdate -and $pkCol -and $pkVal) {
-            # UPDATE Statement
+        # PUT /api/{tableName}?pkCol=col&pkVal=val
+        if ($request.HttpMethod -eq 'PUT') {
+            $pkCol = $request.QueryString['pkCol']
+            $pkVal = $request.QueryString['pkVal']
+
+            $reader = New-Object System.IO.StreamReader($request.InputStream, $request.ContentEncoding)
+            $bodyJson = $reader.ReadToEnd()
+            $reader.Close()
+
+            $fields = $bodyJson | ConvertFrom-Json
+
             $setList = @()
             foreach ($prop in $fields.PSObject.Properties) {
                 $colName = $prop.Name
@@ -151,12 +148,29 @@ while ($listener.IsListening) {
                     $setList += "[$colName] = N'$cleanVal'"
                 }
             }
-            $setStr = $setList -join ", "
+            $setStr = $setList -join ', '
             $updateQuery = "UPDATE dbo.[$tableName] SET $setStr WHERE [$pkCol] = '$pkVal';"
-            Write-Host "Executing SQL Update: $updateQuery" -ForegroundColor Yellow
+            Write-Host "SQL UPDATE: $updateQuery" -ForegroundColor Yellow
             $success = Execute-SqlNonQuery $updateQuery
-        } else {
-            # INSERT Statement
+
+            $resObj = @{ success = $success }
+            $resJson = $resObj | ConvertTo-Json
+            $buffer = [System.Text.Encoding]::UTF8.GetBytes($resJson)
+            $response.ContentType = 'application/json; charset=utf-8'
+            $response.ContentLength64 = $buffer.Length
+            $response.OutputStream.Write($buffer, 0, $buffer.Length)
+            $response.Close()
+            continue
+        }
+
+        # POST /api/{tableName}
+        if ($request.HttpMethod -eq 'POST') {
+            $reader = New-Object System.IO.StreamReader($request.InputStream, $request.ContentEncoding)
+            $bodyJson = $reader.ReadToEnd()
+            $reader.Close()
+
+            $fields = $bodyJson | ConvertFrom-Json
+
             $cols = @()
             $vals = @()
             $hasIdentityCol = $false
@@ -196,45 +210,20 @@ while ($listener.IsListening) {
                 $insertQuery = "INSERT INTO dbo.[$tableName] ($colsStr) VALUES ($valsStr);"
             }
             
-            Write-Host "Executing SQL Insert: $insertQuery" -ForegroundColor Green
+            Write-Host "SQL INSERT: $insertQuery" -ForegroundColor Green
             $success = Execute-SqlNonQuery $insertQuery
+
+            $resObj = @{ success = $success }
+            $resJson = $resObj | ConvertTo-Json
+            $buffer = [System.Text.Encoding]::UTF8.GetBytes($resJson)
+            $response.ContentType = 'application/json; charset=utf-8'
+            $response.ContentLength64 = $buffer.Length
+            $response.OutputStream.Write($buffer, 0, $buffer.Length)
+            $response.Close()
+            continue
         }
-
-        $resObj = @{ success = $success; message = 'Saved directly to SQL Server QLGRAB' }
-        $resJson = $resObj | ConvertTo-Json
-        $buffer = [System.Text.Encoding]::UTF8.GetBytes($resJson)
-        $response.ContentType = 'application/json; charset=utf-8'
-        $response.ContentLength64 = $buffer.Length
-        $response.OutputStream.Write($buffer, 0, $buffer.Length)
-        $response.Close()
-        continue
     }
 
-    # Serve Static Files
-    $filePath = "." + $rawUrl
-    if ($rawUrl -eq "/") { $filePath = "./index.html" }
-
-    if (Test-Path $filePath -PathType Leaf) {
-        $buffer = [System.IO.File]::ReadAllBytes($filePath)
-        $response.ContentType = Get-ContentType $filePath
-        $response.ContentLength64 = $buffer.Length
-        $response.OutputStream.Write($buffer, 0, $buffer.Length)
-        $response.Close()
-    } else {
-        $response.StatusCode = 404
-        $response.Close()
-    }
-}
-
-function Get-ContentType($path) {
-    switch -Regex ($path) {
-        "\.html$" { return "text/html; charset=utf-8" }
-        "\.css$"  { return "text/css; charset=utf-8" }
-        "\.js$"   { return "application/javascript; charset=utf-8" }
-        "\.json$" { return "application/json; charset=utf-8" }
-        "\.png$"  { return "image/png" }
-        "\.jpg$"  { return "image/jpeg" }
-        "\.svg$"  { return "image/svg+xml" }
-        default   { return "text/plain; charset=utf-8" }
-    }
+    $response.StatusCode = 404
+    $response.Close()
 }
