@@ -4,16 +4,25 @@
 # ==============================================================================
 
 $port = 5000
-$listener = New-Object System.Net.HttpListener
-$listener.Prefixes.Add("http://localhost:$port/")
-$listener.Start()
-
-Write-Host '==========================================================================' -ForegroundColor Green
-Write-Host ' 🚀 BACKEND SERVER IS RUNNING ON http://localhost:5000/api' -ForegroundColor Cyan
-Write-Host ' 🗄️ DIRECT SQL SERVER DATABASE: [QLGRAB]' -ForegroundColor Yellow
-Write-Host '==========================================================================' -ForegroundColor Green
-
 $connectionString = 'Server=.;Database=QLGRAB;Integrated Security=True;TrustServerCertificate=True;'
+
+try {
+    $listener = New-Object System.Net.HttpListener
+    $listener.Prefixes.Add("http://localhost:$port/")
+    $listener.Start()
+    
+    Write-Host '==========================================================================' -ForegroundColor Green
+    Write-Host ' 🚀 BACKEND SERVER IS RUNNING ON http://localhost:5000/api' -ForegroundColor Cyan
+    Write-Host ' 🗄️ DIRECT SQL SERVER DATABASE: [QLGRAB]' -ForegroundColor Yellow
+    Write-Host '==========================================================================' -ForegroundColor Green
+} catch {
+    Write-Host '==========================================================================' -ForegroundColor Yellow
+    Write-Host " 🟢 SERVER DANG HOAT DONG SAN TAI: http://localhost:$port/api" -ForegroundColor Green
+    Write-Host ' 🗄️ DA KET NOI TRUC TIEP TOI SQL SERVER DATABASE: [QLGRAB]' -ForegroundColor Cyan
+    Write-Host ' (Ban khong can bat lai nua, hay mo trinh duyet va su dung!)' -ForegroundColor White
+    Write-Host '==========================================================================' -ForegroundColor Yellow
+    return
+}
 
 function Execute-SqlQuery([string]$query) {
     try {
