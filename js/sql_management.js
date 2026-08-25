@@ -1,9 +1,10 @@
 /* ==========================================================================
    GRAB RIDE PLATFORM - SQL DATABASE MANAGEMENT HUB (11 TABLES)
-   Direct Live Sync with SQL Server Database: QLGRAB
+   Direct Real-time Sync with SQL Server Database: QLGRAB
    ========================================================================== */
 
 let activeSqlTable = 'BangGiaCuoc';
+let editingRecordIndex = null;
 
 let qlgrabDatabaseState = {
   BangGiaCuoc: [
@@ -65,6 +66,7 @@ async function loadLiveSqlData() {
 
 async function switchSqlTable(tableName) {
   activeSqlTable = tableName;
+  editingRecordIndex = null;
   document.querySelectorAll('.sql-table-tab').forEach(tab => tab.classList.remove('active'));
   
   const currentTabBtn = Array.from(document.querySelectorAll('.sql-table-tab')).find(b => b.innerText.includes(tableName));
@@ -72,6 +74,18 @@ async function switchSqlTable(tableName) {
 
   await loadLiveSqlData();
   renderActiveSqlTable();
+}
+
+function formatDateDisplay(val) {
+  if (!val) return '<span style="color:#64748b;">NULL</span>';
+  if (typeof val === 'string' && val.includes('/Date(')) {
+    const timestamp = parseInt(val.replace(/\/Date\((\d+)\)\//, '$1'));
+    if (!isNaN(timestamp)) {
+      const d = new Date(timestamp);
+      return d.toISOString().split('T')[0];
+    }
+  }
+  return val;
 }
 
 function renderActiveSqlTable() {
@@ -97,14 +111,17 @@ function renderActiveSqlTable() {
   }
 
   const columns = Object.keys(dataList[0]);
-
   const headersHtml = columns.map(col => `<th>${col}</th>`).join('') + '<th style="text-align: right;">Thao tác</th>';
   
   const rowsHtml = dataList.map((row, idx) => {
     const cellsHtml = columns.map(col => {
       let val = row[col];
-      if (typeof val === 'number' && col.includes('tien')) val = `${val.toLocaleString('vi-VN')} VNĐ`;
-      return `<td>${val !== null && val !== undefined ? val : '<span style="color:#64748b;">NULL</span>'}</td>`;
+      if (typeof val === 'number' && col.includes('tien')) {
+        val = `${val.toLocaleString('vi-VN')} VNĐ`;
+      } else {
+        val = formatDateDisplay(val);
+      }
+      return `<td>${val}</td>`;
     }).join('');
 
     return `
@@ -127,6 +144,7 @@ function renderActiveSqlTable() {
 }
 
 function openAddDataModal() {
+  editingRecordIndex = null;
   const modal = document.getElementById('add-record-modal');
   const title = document.getElementById('modal-form-title');
   const container = document.getElementById('form-fields-container');
@@ -136,7 +154,7 @@ function openAddDataModal() {
   if (title) title.innerText = `➕ Thêm Bản Ghi Mới Vào dbo.${activeSqlTable}`;
 
   const dataList = qlgrabDatabaseState[activeSqlTable] || [];
-  let sampleRecord = dataList[0] || { ma_id: 1, ten: '' };
+  let sampleRecord = dataList[0] || { ma_id: 1, me_ten: '' };
 
   const fieldsHtml = Object.keys(sampleRecord).map(key => `
     <div>
@@ -152,9 +170,42 @@ function openAddDataModal() {
   modal.style.display = 'flex';
 }
 
+function editRecordIndex(idx) {
+  editingRecordIndex = idx;
+  const modal = document.getElementById('add-record-modal');
+  const title = document.getElementById('modal-form-title');
+  const container = document.getElementById('form-fields-container');
+
+  if (!modal || !container) return;
+
+  const dataList = qlgrabDatabaseState[activeSqlTable] || [];
+  const targetRecord = dataList[idx];
+  if (!targetRecord) return;
+
+  if (title) title.innerText = `✏️ Cập Nhật Bản Ghi #${idx + 1} Trong dbo.${activeSqlTable}`;
+
+  const fieldsHtml = Object.keys(targetRecord).map(key => {
+    let val = targetRecord[key];
+    if (val === null || val === undefined) val = '';
+    return `
+      <div>
+        <label style="display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.3rem; font-weight: 600;">
+          ${key}:
+        </label>
+        <input type="text" name="${key}" value="${val}" 
+          style="width: 100%; padding: 0.7rem; background: #090d16; border: 1px solid var(--grab-green); border-radius: var(--radius-sm); color: #fff; font-family: var(--font-main);">
+      </div>
+    `;
+  }).join('');
+
+  container.innerHTML = fieldsHtml;
+  modal.style.display = 'flex';
+}
+
 function closeAddDataModal() {
   const modal = document.getElementById('add-record-modal');
   if (modal) modal.style.display = 'none';
+  editingRecordIndex = null;
 }
 
 async function saveRecordToSql(event) {
@@ -169,28 +220,56 @@ async function saveRecordToSql(event) {
     }
   });
 
-  if (!qlgrabDatabaseState[activeSqlTable]) qlgrabDatabaseState[activeSqlTable] = [];
-  qlgrabDatabaseState[activeSqlTable].push(newObj);
+  const dataList = qlgrabDatabaseState[activeSqlTable] || [];
 
-  closeAddDataModal();
-  renderActiveSqlTable();
+  if (editingRecordIndex !== null && editingRecordIndex >= 0) {
+    // UPDATE OPERATION
+    dataList[editingRecordIndex] = newObj;
+    closeAddDataModal();
+    renderActiveSqlTable();
 
-  // DIRECT REAL-TIME SAVE TO POWERSHELL SERVER & SQL SERVER QLGRAB
-  if (window.SqlConnector) {
-    const saved = await window.SqlConnector.insertRecord(activeSqlTable, newObj);
-    if (saved) {
-      showToast(`ĐÃ LƯU TRỰC TIẾP VÀO SQL SERVER DATABASE QLGRAB!`, 'success', 'SQL Server Live Sync');
-    } else {
-      showToast(`Đã thêm bản ghi trên Web (Hãy bật server.ps1 để đồng bộ tự động)`, 'info');
+    const pkCol = Object.keys(newObj)[0];
+    const pkVal = newObj[pkCol];
+
+    if (window.SqlConnector) {
+      const updated = await window.SqlConnector.updateRecord(activeSqlTable, pkCol, pkVal, newObj);
+      if (updated) {
+        showToast(`ĐÃ CẬP NHẬT TRỰC TIẾP VÀO SQL SERVER DBO.${activeSqlTable}!`, 'success', 'SQL Server Updated');
+      }
+    }
+  } else {
+    // INSERT OPERATION
+    dataList.push(newObj);
+    closeAddDataModal();
+    renderActiveSqlTable();
+
+    if (window.SqlConnector) {
+      const saved = await window.SqlConnector.insertRecord(activeSqlTable, newObj);
+      if (saved) {
+        showToast(`ĐÃ THÊM MỚI VÀO SQL SERVER DBO.${activeSqlTable}!`, 'success', 'SQL Server Saved');
+      }
     }
   }
 }
 
-function deleteRecordIndex(idx) {
-  if (confirm(`Bạn có chắc muốn xóa bản ghi #${idx + 1} khỏi dbo.${activeSqlTable}?`)) {
-    qlgrabDatabaseState[activeSqlTable].splice(idx, 1);
+async function deleteRecordIndex(idx) {
+  const dataList = qlgrabDatabaseState[activeSqlTable] || [];
+  const targetRecord = dataList[idx];
+  if (!targetRecord) return;
+
+  const pkCol = Object.keys(targetRecord)[0];
+  const pkVal = targetRecord[pkCol];
+
+  if (confirm(`Bạn có chắc muốn XÓA bản ghi #${pkVal} khỏi dbo.${activeSqlTable}?`)) {
+    dataList.splice(idx, 1);
     renderActiveSqlTable();
-    showToast(`Đã xóa bản ghi khỏi dbo.${activeSqlTable}`, 'info');
+
+    if (window.SqlConnector && pkCol && pkVal) {
+      const deleted = await window.SqlConnector.deleteRecord(activeSqlTable, pkCol, pkVal);
+      if (deleted) {
+        showToast(`ĐÃ XÓA TRỰC TIẾP KHỎI SQL SERVER DBO.${activeSqlTable}!`, 'success', 'SQL Server Deleted');
+      }
+    }
   }
 }
 
