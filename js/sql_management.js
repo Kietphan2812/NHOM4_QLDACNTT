@@ -1,29 +1,31 @@
 /* ==========================================================================
    GRAB RIDE PLATFORM - SQL DATABASE MANAGEMENT HUB (11 TABLES)
-   Direct Real-time Sync with SQL Server Database: QLGRAB
+   Optimized for GitHub Pages (https://kietphan2812.github.io/NHOM4_QLDACNTT/)
+   Includes LocalStorage Persistence, Real-time Sync & Live SQL Connection
    ========================================================================== */
 
 let activeSqlTable = 'BangGiaCuoc';
 let editingRecordIndex = null;
 
-let qlgrabDatabaseState = {
+// Initial Seed State for database QLGRAB
+const DEFAULT_QLGRAB_STATE = {
   BangGiaCuoc: [
-    { ma_gia_cuoc: 1, loai_xe: 'XE_MAY', gia_mo_cua: 14000, gia_moi_km_tiep_theo: 5500, he_so_gio_cao_diem: 1.0, ngay_cap_nhat: '2026-08-25' },
-    { ma_gia_cuoc: 2, loai_xe: 'OTO_4_CHO', gia_mo_cua: 24000, gia_moi_km_tiep_theo: 10500, he_so_gio_cao_diem: 1.0, ngay_cap_nhat: '2026-08-25' },
-    { ma_gia_cuoc: 3, loai_xe: 'OTO_7_CHO', gia_mo_cua: 30000, gia_moi_km_tiep_theo: 13500, he_so_gio_cao_diem: 1.0, ngay_cap_nhat: '2026-08-25' }
+    { ma_gia_cuoc: 1, loai_xe: 'XE_MAY', gia_mo_cua: 14000, gia_moi_km_tiep_theo: 5500, he_so_gio_cao_diem: 1.0, ngay_cap_nhat: '2026-08-25 09:28:48' },
+    { ma_gia_cuoc: 2, loai_xe: 'OTO_4_CHO', gia_mo_cua: 24000, gia_moi_km_tiep_theo: 10500, he_so_gio_cao_diem: 1.0, ngay_cap_nhat: '2026-08-25 09:28:48' },
+    { ma_gia_cuoc: 3, loai_xe: 'OTO_7_CHO', gia_mo_cua: 30000, gia_moi_km_tiep_theo: 13500, he_so_gio_cao_diem: 1.0, ngay_cap_nhat: '2026-08-25 09:28:48' }
   ],
   CuocXe: [
     { ma_cuoc_xe: 1, ma_khach_hang: 1, ma_tai_xe: 2, dia_chi_don: 'Đại Học Bách Khoa (Q.10)', vi_do_don: 10.7721, kinh_do_don: 106.6578, dia_chi_tra: 'Sân Bay Tân Sơn Nhất', vi_do_tra: 10.8185, kinh_do_tra: 106.6588, quang_duong_km: 7.4, thoi_gian_du_kien_phut: 18, gia_cuoc_goc: 80700, so_tien_giam: 0, tong_tien_thanhtoan: 80700, trang_thai: 'HOAN_THANH' }
   ],
   DanhGia: [
-    { ma_danh_gia: 1, ma_cuoc_xe: 1, ma_nguoi_danh_gia: 1, ma_nguoi_nhan_danh_gia: 2, so_sao: 5, noi_dung_binh_luan: 'Tài xế lái xe an toàn, phục vụ tốt!', ngay_danh_gia: '2026-08-25' }
+    { ma_danh_gia: 1, ma_cuoc_xe: 1, ma_nguoi_danh_gia: 1, ma_nguoi_nhan_danh_gia: 2, so_sao: 5, noi_dung_binh_luan: 'Tài xế lái xe an toàn, phục vụ tốt!', ngay_danh_gia: '2026-08-25 09:28:48' }
   ],
   HoSoTaiXe: [
     { ma_tai_xe: 2, so_bang_lai: 'B2-892104912', bien_so_xe: '51H-892.41', ten_dong_xe: 'Honda City (Trắng)', loai_xe: 'OTO_4_CHO', trang_thai: 'TRUC_TUYEN', vi_do_hien_tai: 10.7740, kinh_do_hien_tai: 106.6590 },
     { ma_tai_xe: 3, so_bang_lai: 'B2-341902811', bien_so_xe: '51F-341.88', ten_dong_xe: 'Toyota Vios (Bạc)', loai_xe: 'OTO_4_CHO', trang_thai: 'TRUC_TUYEN', vi_do_hien_tai: 10.7710, kinh_do_hien_tai: 106.6550 }
   ],
   LichSuGiaoDichVi: [
-    { ma_giao_dich: 1, ma_vi: 1, so_tien: -12105, loai_giao_dich: 'TRU_HOA_HONG', noi_dung: 'Chiết khấu 15% CuocXe #1', thoi_gian: '2026-08-25 09:28' }
+    { ma_giao_dich: 1, ma_vi: 1, so_tien: -12105, loai_giao_dich: 'TRU_HOA_HONG', noi_dung: 'Chiết khấu 15% CuocXe #1', thoi_gian: '2026-08-25 09:28:48' }
   ],
   MaGiamGia: [
     { ma_khuyen_mai: 1, code_giam_gia: 'GRAB20', phan_tram_giam: 20, giam_toi_da: 30000, gia_tri_don_toi_thieu: 50000, ngay_bat_dau: '2026-08-01', ngay_ket_thuc: '2026-09-01', so_luong_con_lai: 100 },
@@ -36,7 +38,7 @@ let qlgrabDatabaseState = {
     { ma_nguoi_dung: 4, ho_ten: 'Quản Trị Viên Nhóm 4', so_dien_thoai: '0999888777', email: 'admin@qlgrab.vn', vai_tro: 'QUAN_TRI', trang_thai_tai_khoan: 'HOAT_DONG', diem_danh_gia_trung_binh: 5.0 }
   ],
   NhatKyDiChuyen: [
-    { ma_nhat_ky: 1, ma_cuoc_xe: 1, vi_do: 10.7721, kinh_do: 106.6578, thoi_gian_ghi_nhan: '2026-08-25 09:20' }
+    { ma_nhat_ky: 1, ma_cuoc_xe: 1, vi_do: 10.7721, kinh_do: 106.6578, thoi_gian_ghi_nhan: '2026-08-25 09:20:00' }
   ],
   ThanhToan: [
     { ma_thanh_toan: 1, ma_cuoc_xe: 1, phuong_thuc: 'MOMO', so_tien: 80700, trang_thai: 'THANH_CONG', ma_giao_dich_cong: 'MOMO_8819231' }
@@ -50,27 +52,38 @@ let qlgrabDatabaseState = {
   ]
 };
 
+// Persistent State Handler
+let qlgrabDatabaseState = loadPersistentState();
+
+function loadPersistentState() {
+  try {
+    const saved = localStorage.getItem('QLGRAB_STATE_V2');
+    if (saved) return JSON.parse(saved);
+  } catch (e) {
+    console.warn('LocalStorage not available');
+  }
+  return JSON.parse(JSON.stringify(DEFAULT_QLGRAB_STATE));
+}
+
+function savePersistentState() {
+  try {
+    localStorage.setItem('QLGRAB_STATE_V2', JSON.stringify(qlgrabDatabaseState));
+  } catch (e) {
+    console.warn('Could not save to LocalStorage');
+  }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
-  checkProtocolAndWarn();
   await loadLiveSqlData();
   renderActiveSqlTable();
 });
 
-function checkProtocolAndWarn() {
-  if (window.location.protocol === 'https:') {
-    showToast(
-      'Trình duyệt HTTPS chặn kết nối tới SQL Server localhost. Hãy mở link: http://localhost:3000/sql_management.html hoặc file:///C:/Users/DELL/Desktop/NHOM4_QLDACNTT/sql_management.html để đồng bộ trực tiếp!',
-      'warning',
-      '⚠️ Lưu Ý Kết Nối SQL Server'
-    );
-  }
-}
-
 async function loadLiveSqlData() {
-  if (window.SqlConnector) {
+  if (window.SqlConnector && window.location.protocol !== 'https:') {
     const liveData = await window.SqlConnector.getTableData(activeSqlTable);
     if (liveData && liveData.length > 0) {
       qlgrabDatabaseState[activeSqlTable] = liveData;
+      savePersistentState();
     }
   }
 }
@@ -93,7 +106,7 @@ function formatDateDisplay(val) {
     const timestamp = parseInt(val.replace(/\/Date\((\d+)\)\//, '$1'));
     if (!isNaN(timestamp)) {
       const d = new Date(timestamp);
-      return d.toISOString().split('T')[0];
+      return d.toISOString().split('T')[0] + ' ' + d.toTimeString().split(' ')[0];
     }
   }
   return val;
@@ -165,7 +178,7 @@ function openAddDataModal() {
   if (title) title.innerText = `➕ Thêm Bản Ghi Mới Vào dbo.${activeSqlTable}`;
 
   const dataList = qlgrabDatabaseState[activeSqlTable] || [];
-  let sampleRecord = dataList[0] || { ma_id: 1, me_ten: '' };
+  let sampleRecord = dataList[0] || { ma_id: 1, ten: '' };
 
   const fieldsHtml = Object.keys(sampleRecord).map(key => `
     <div>
@@ -238,6 +251,7 @@ async function saveRecordToSql(event) {
     // UPDATE OPERATION
     const originalRecord = dataList[editingRecordIndex];
     dataList[editingRecordIndex] = newObj;
+    savePersistentState();
     closeAddDataModal();
     renderActiveSqlTable();
 
@@ -249,12 +263,13 @@ async function saveRecordToSql(event) {
       if (updated) {
         showToast(`ĐÃ CẬP NHẬT TRỰC TIẾP VÀO SQL SERVER DBO.${activeSqlTable}!`, 'success', 'SQL Server Updated');
       } else {
-        showToast(`Hãy mở link http://localhost:3000/sql_management.html để ghi trực tiếp vào SSMS!`, 'warning');
+        showToast(`Đã lưu cập nhật trên Web! Xuất script hoặc mở server.ps1 để đồng bộ SSMS`, 'success');
       }
     }
   } else {
     // INSERT OPERATION
     dataList.push(newObj);
+    savePersistentState();
     closeAddDataModal();
     renderActiveSqlTable();
 
@@ -263,7 +278,7 @@ async function saveRecordToSql(event) {
       if (saved) {
         showToast(`ĐÃ THÊM MỚI VÀO SQL SERVER DBO.${activeSqlTable}!`, 'success', 'SQL Server Saved');
       } else {
-        showToast(`Hãy mở link http://localhost:3000/sql_management.html để ghi trực tiếp vào SSMS!`, 'warning');
+        showToast(`Đã thêm mới bản ghi! Bấm 'Xuất Script INSERT INTO' để chèn vào SSMS`, 'success');
       }
     }
   }
@@ -279,12 +294,15 @@ async function deleteRecordIndex(idx) {
 
   if (confirm(`Bạn có chắc muốn XÓA bản ghi #${pkVal} khỏi dbo.${activeSqlTable}?`)) {
     dataList.splice(idx, 1);
+    savePersistentState();
     renderActiveSqlTable();
 
     if (window.SqlConnector && pkCol && pkVal) {
       const deleted = await window.SqlConnector.deleteRecord(activeSqlTable, pkCol, pkVal);
       if (deleted) {
         showToast(`ĐÃ XÓA TRỰC TIẾP KHỎI SQL SERVER DBO.${activeSqlTable}!`, 'success', 'SQL Server Deleted');
+      } else {
+        showToast(`Đã xóa khỏi bảng hiển thị Web!`, 'info');
       }
     }
   }
