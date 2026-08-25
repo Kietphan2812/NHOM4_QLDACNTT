@@ -51,9 +51,20 @@ let qlgrabDatabaseState = {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
+  checkProtocolAndWarn();
   await loadLiveSqlData();
   renderActiveSqlTable();
 });
+
+function checkProtocolAndWarn() {
+  if (window.location.protocol === 'https:') {
+    showToast(
+      'Trình duyệt HTTPS chặn kết nối tới SQL Server localhost. Hãy mở link: http://localhost:3000/sql_management.html hoặc file:///C:/Users/DELL/Desktop/NHOM4_QLDACNTT/sql_management.html để đồng bộ trực tiếp!',
+      'warning',
+      '⚠️ Lưu Ý Kết Nối SQL Server'
+    );
+  }
+}
 
 async function loadLiveSqlData() {
   if (window.SqlConnector) {
@@ -77,7 +88,7 @@ async function switchSqlTable(tableName) {
 }
 
 function formatDateDisplay(val) {
-  if (!val) return '<span style="color:#64748b;">NULL</span>';
+  if (val === null || val === undefined) return '<span style="color:#64748b;">NULL</span>';
   if (typeof val === 'string' && val.includes('/Date(')) {
     const timestamp = parseInt(val.replace(/\/Date\((\d+)\)\//, '$1'));
     if (!isNaN(timestamp)) {
@@ -184,15 +195,16 @@ function editRecordIndex(idx) {
 
   if (title) title.innerText = `✏️ Cập Nhật Bản Ghi #${idx + 1} Trong dbo.${activeSqlTable}`;
 
-  const fieldsHtml = Object.keys(targetRecord).map(key => {
+  const fieldsHtml = Object.keys(targetRecord).map((key, kIdx) => {
     let val = targetRecord[key];
     if (val === null || val === undefined) val = '';
+    const isPk = (kIdx === 0);
     return `
       <div>
-        <label style="display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.3rem; font-weight: 600;">
-          ${key}:
+        <label style="display: block; font-size: 0.8rem; color: ${isPk ? '#94a3b8' : 'var(--grab-green)'}; margin-bottom: 0.3rem; font-weight: 600;">
+          ${key} ${isPk ? '(Khóa chính PK - Không sửa)' : ''}:
         </label>
-        <input type="text" name="${key}" value="${val}" 
+        <input type="text" name="${key}" value="${val}" ${isPk ? 'readonly style="background:#1e293b; color:#94a3b8;"' : ''}
           style="width: 100%; padding: 0.7rem; background: #090d16; border: 1px solid var(--grab-green); border-radius: var(--radius-sm); color: #fff; font-family: var(--font-main);">
       </div>
     `;
@@ -224,17 +236,20 @@ async function saveRecordToSql(event) {
 
   if (editingRecordIndex !== null && editingRecordIndex >= 0) {
     // UPDATE OPERATION
+    const originalRecord = dataList[editingRecordIndex];
     dataList[editingRecordIndex] = newObj;
     closeAddDataModal();
     renderActiveSqlTable();
 
-    const pkCol = Object.keys(newObj)[0];
-    const pkVal = newObj[pkCol];
+    const pkCol = Object.keys(originalRecord)[0];
+    const pkVal = originalRecord[pkCol];
 
     if (window.SqlConnector) {
       const updated = await window.SqlConnector.updateRecord(activeSqlTable, pkCol, pkVal, newObj);
       if (updated) {
         showToast(`ĐÃ CẬP NHẬT TRỰC TIẾP VÀO SQL SERVER DBO.${activeSqlTable}!`, 'success', 'SQL Server Updated');
+      } else {
+        showToast(`Hãy mở link http://localhost:3000/sql_management.html để ghi trực tiếp vào SSMS!`, 'warning');
       }
     }
   } else {
@@ -247,6 +262,8 @@ async function saveRecordToSql(event) {
       const saved = await window.SqlConnector.insertRecord(activeSqlTable, newObj);
       if (saved) {
         showToast(`ĐÃ THÊM MỚI VÀO SQL SERVER DBO.${activeSqlTable}!`, 'success', 'SQL Server Saved');
+      } else {
+        showToast(`Hãy mở link http://localhost:3000/sql_management.html để ghi trực tiếp vào SSMS!`, 'warning');
       }
     }
   }
